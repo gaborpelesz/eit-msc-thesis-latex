@@ -84,9 +84,13 @@ Typst's bibliography engine (hayagriva, as bundled with Typst 0.15.1) has a
 few limits that no style can work around:
 
 - `version` is never passed to the style, nor an `@inproceedings`'
-  `organization` (so e.g. "IEEE." is not printed);
+  `organization` (so e.g. "IEEE." is not printed).
 - `howpublished` arrives only if the entry has no `note` (it is then printed
   where biblatex prints `howpublished`); with both, only `note` is printed.
+- `subtitle` is not passed either; put it into `title` ("Title: Subtitle")
+  if it must appear.
+- LaTeX markup such as `\emph{…}` or ``` ``…'' ``` is printed literally
+  (accent commands like `\"o` are converted); write plain Unicode text.
 
 For the method forks on GitHub, put the version or commit in `note` and give
 the URL with its access date. This pattern renders as

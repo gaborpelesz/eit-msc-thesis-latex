@@ -93,6 +93,49 @@
       <date variable="issued" prefix="(" suffix=")"><date-part name="year"/><date-part name="month" form="short" prefix=". "/></date>
     </group>
   </macro>
+  <!-- "In: Booktitle." with the period inside the italic run (see title-italic) -->
+  <macro name="in-container-italic">
+    <group delimiter=" ">
+      
+      <text variable="container-title" font-style="italic" suffix="."/>
+    </group>
+  </macro>
+  <!-- everything after "In: Booktitle. Ed. by X" in an incollection -->
+  <macro name="chapter-rest">
+    <group delimiter=". ">
+      <text macro="volume"/>
+      <text macro="series"/>
+      <text variable="note"/>
+      <choose>
+        <if variable="chapter-number">
+          <group delimiter=". ">
+            <text macro="publisher-date"/>
+            <group delimiter=", ">
+              <group delimiter=" "><choose><if is-numeric="chapter-number"><text variable="chapter-number" suffix="."/></if><else><text variable="chapter-number"/></else></choose><text value="fej."/></group>
+              <text macro="pages"/>
+            </group>
+          </group>
+        </if>
+        <else>
+          <group delimiter=", ">
+            <text macro="publisher-date"/>
+            <text macro="pages"/>
+          </group>
+        </else>
+      </choose>
+      <text macro="identifiers"/>
+    </group>
+  </macro>
+  <!-- "Location: Institution, Date" (thesis, report) -->
+  <macro name="institution-date">
+    <group delimiter=", ">
+      <group delimiter=": ">
+        <text variable="publisher-place"/>
+        <text variable="authority"/>
+      </group>
+      <text macro="date"/>
+    </group>
+  </macro>
   <!-- italic title followed by its period inside the italic run, so the
        template can drop the period after a title ending in ! or ? -->
   <macro name="title-italic">
@@ -167,6 +210,14 @@
       <text variable="citation-number"/>
     </layout>
   </citation>
+  <!--
+    Punctuation: an italic title (or booktitle) carries the period that
+    follows it inside the italic run and is joined to what follows with a
+    plain space. hayagriva drops that period after a title ending in "."
+    and the template's bibliography show rule drops it after "?" "!" "…"
+    (biblatex's punctuation tracker). A period that the engine places
+    outside the italic run (a ". " delimiter) could not be removed.
+  -->
   <bibliography second-field-align="flush" entry-spacing="0">
     <layout suffix=".">
       <text variable="citation-number" prefix="[" suffix="]"/>
@@ -177,11 +228,12 @@
             <group delimiter=" ">
               <text macro="title-italic"/>
               <group delimiter=". ">
-              <text variable="edition"/>
-              <text macro="volume"/>
-              <text macro="series"/>
-              <text variable="note"/>
-              <text macro="publisher-date"/>
+                <text variable="edition"/>
+                <text macro="volume"/>
+                <text macro="series"/>
+                <text variable="note"/>
+                <text macro="publisher-date"/>
+                <text macro="identifiers"/>
               </group>
             </group>
           </if>
@@ -205,96 +257,126 @@
                   </group>
                 </else>
               </choose>
+              <text macro="identifiers"/>
             </group>
           </else-if>
           <else-if type="paper-conference" match="any">
             <!-- inproceedings -->
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
-              <text macro="in-container"/>
-              <text macro="volume"/>
-              <text macro="series"/>
-              <text variable="note"/>
-              <text variable="authority"/>
-              <group delimiter=", ">
-                <text macro="publisher-date"/>
-                <text macro="pages"/>
-              </group>
+              <choose>
+                <if variable="container-title">
+                  <group delimiter=" ">
+                    <text macro="in-container-italic"/>
+                    <group delimiter=". ">
+                      <text macro="ed-by"/>
+                      <text macro="volume"/>
+                      <text macro="series"/>
+                      <text variable="note"/>
+                      <text variable="authority"/>
+                      <group delimiter=", ">
+                        <text macro="publisher-date"/>
+                        <text macro="pages"/>
+                      </group>
+                      <text macro="identifiers"/>
+                    </group>
+                  </group>
+                </if>
+                <else>
+                  <group delimiter=". ">
+                    <text macro="in-container"/>
+                    <text macro="volume"/>
+                    <text macro="series"/>
+                    <text variable="note"/>
+                    <text variable="authority"/>
+                    <group delimiter=", ">
+                      <text macro="publisher-date"/>
+                      <text macro="pages"/>
+                    </group>
+                    <text macro="identifiers"/>
+                  </group>
+                </else>
+              </choose>
             </group>
           </else-if>
           <else-if type="chapter entry-encyclopedia entry-dictionary" match="any">
             <!-- incollection -->
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
-              <text macro="in-container"/>
-              <text macro="volume"/>
-              <text macro="series"/>
-              <text variable="note"/>
               <choose>
-                <if variable="chapter-number">
-                  <group delimiter=". ">
-                    <text macro="publisher-date"/>
-                    <group delimiter=", ">
-                      <group delimiter=" "><text variable="chapter-number"/><text value="fej."/></group>
-                      <text macro="pages"/>
+                <if variable="container-title">
+                  <group delimiter=" ">
+                    <text macro="in-container-italic"/>
+                    <group delimiter=". ">
+                      <text macro="ed-by"/>
+                      <text macro="chapter-rest"/>
                     </group>
                   </group>
                 </if>
                 <else>
-                  <group delimiter=", ">
-                    <text macro="publisher-date"/>
-                    <text macro="pages"/>
+                  <group delimiter=". ">
+                    <text macro="in-container"/>
+                    <text macro="chapter-rest"/>
                   </group>
                 </else>
               </choose>
             </group>
           </else-if>
           <else-if type="thesis" match="any">
-            <!-- thesis: "Title". Note. Type. Institution, Date (biblatex
-                 quotes thesis titles) -->
+            <!-- thesis: "Title". Note. Type. Location: Institution, Date -->
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
               <text variable="note"/>
               <text variable="genre"/>
-              <group delimiter=", ">
-                <text variable="authority"/>
-                <text macro="publisher-place-publisher"/>
-                <text macro="date"/>
-              </group>
+              <text macro="institution-date"/>
+              <text macro="identifiers"/>
             </group>
           </else-if>
           <else-if type="report" match="any">
+            <!-- report: Title. Type Number. Note. Location: Institution, Date -->
             <group delimiter=" ">
               <text macro="title-italic"/>
               <group delimiter=". ">
-              <text variable="genre"/>
-              <text variable="note"/>
-              <group delimiter=", ">
-                <text variable="authority"/>
-                <text macro="publisher-place-publisher"/>
-                <text macro="date"/>
+                <group delimiter=" ">
+                  <text variable="genre"/>
+                  <text variable="number"/>
+                </group>
+                <text variable="note"/>
+                <text macro="institution-date"/>
+                <text macro="identifiers"/>
               </group>
+            </group>
+          </else-if>
+          <else-if type="webpage post post-weblog" match="any">
+            <!-- online: Title. Note. Organization. Date. url (visited) -->
+            <group delimiter=" ">
+              <text macro="title-italic"/>
+              <group delimiter=". ">
+                <text variable="note"/>
+                <text variable="authority"/>
+                <text macro="date"/>
+                <text macro="identifiers"/>
               </group>
             </group>
           </else-if>
           <else>
-            <!-- online, misc, software (biblatex @misc driver; @software is
-                 its alias): Title. Howpublished/Note. Location: Organization,
+            <!-- misc, software (biblatex @misc driver; @software is its
+                 alias): Title. Howpublished/Note. Location: Organization,
                  Date. No publisher. hayagriva passes `howpublished` as `note`
                  when the entry has no note of its own. -->
             <group delimiter=" ">
               <text macro="title-italic"/>
               <group delimiter=". ">
-              <text variable="genre"/>
-              <text variable="container-title" font-style="italic"/>
-              <text variable="note"/>
-              <text macro="organization-date"/>
-              <text macro="pages"/>
+                <text variable="genre"/>
+                <text variable="container-title" font-style="italic"/>
+                <text variable="note"/>
+                <text macro="organization-date"/>
+                <text macro="pages"/>
+                <text macro="identifiers"/>
               </group>
             </group>
           </else>
         </choose>
-        <text macro="identifiers"/>
       </group>
     </layout>
   </bibliography>

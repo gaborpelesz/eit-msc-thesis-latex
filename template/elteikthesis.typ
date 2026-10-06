@@ -1128,12 +1128,22 @@
     // biblatex's punctuation tracker: no "." after a title that already
     // ends in . ? or ! inside the quotes
     show regex("[.?!][”\"]\."): it => it.text.slice(0, -1)
-    // italic titles carry their period inside the italic run (see the CSL
-    // macro title-italic), so the same rule works for "Book!" / "Title."
-    show emph: it => { show regex("[.?!]\.$"): m => m.text.slice(0, -1); it }
-    // thesis type strings (hayagriva's English genre -> biblatex bibstrings)
-    show "Doctoral dissertation": if lang == "hu" [Disszertáció] else [PhD thesis]
-    show "Master's thesis": if lang == "hu" [Diplomaterv] else [MA thesis]
+    // Italic titles carry their period inside the italic run (CSL macro
+    // title-italic); after "?" "!" "…" it is dropped here. After "." the
+    // engine has already dropped it.
+    show emph: it => { show regex("[?!…]\.$"): m => m.text.slice(0, -1); it }
+    // Thesis/report types: hayagriva passes either its own English genre or
+    // the raw `type` field; print biblatex's (abbreviated) bibstrings.
+    let types = if lang == "hu" {
+      (phd: "Dissz.", ma: "Dipl.", tech: "Techn. jel.")
+    } else {
+      (phd: "PhD thesis", ma: "MA thesis", tech: "Tech. rep.")
+    }
+    // (an abbreviation's own period absorbs the following ".")
+    let typ(t) = m => if m.text.ends-with(".") and not t.ends-with(".") { t + "." } else { t }
+    show regex("\b(Doctoral dissertation|phdthesis)\b\.?"): typ(types.phd)
+    show regex("\b(Master's thesis|mathesis)\b\.?"): typ(types.ma)
+    show regex("\b(technical report|techreport)\b\.?"): typ(types.tech)
     it
   }
 
