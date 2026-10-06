@@ -35,28 +35,50 @@
 
 #[
 #show figure: set block(breakable: true)
+// A TeX-style font (New Computer Modern) draws `--` as an en dash; a
+// command-line flag such as `--no-debug-output` must keep both hyphens.
+#show "--": set text(ligatures: false)
 #set figure.caption(position: top)
 #figure(
   kind: table,
   caption: cell(data.caption),
   {
-    set text(size: 0.8em)
+    set text(size: 0.8em, hyphenate: false)
+    set par(justify: false)
+    show table.cell: set par(justify: false, first-line-indent: 0pt)
+    show table.cell: set text(hyphenate: false)
+    set block(spacing: 0pt)
     set table.cell(breakable: false)
-    table(
-      columns: (auto, auto, auto, auto, 16%, 30%,),
-      align: (left, left, left, left, left, left,),
-      stroke: none,
-      table.header(
-        repeat: true,
-        rule(0.08em),
-        ..data.head.map(cell),
+    let inset = (x: 0.4em, y: 0.35em)
+    context {
+      // A fitted column is as wide as its widest cell, header included, so
+      // an unbreakable token (a commit SHA) is never squeezed.
+      let fit(i) = 2 * inset.x + calc.max(
+        ..(data.head.at(i), ..data.rows.map(row => row.at(i)))
+          .map(c => measure(cell(c)).width),
+      )
+      table(
+        columns: (16fr, fit(1), fit(2), 16fr, 20fr, 37.5fr,),
+        align: (left, left, left, left, left, left,),
+        inset: inset,
+        stroke: none,
+        table.header(
+          repeat: true,
+          rule(0.08em),
+          ..data.head.map(cell),
+          rule(0.05em),
+        ),
+        ..data.rows.map(row => row.map(cell)).flatten(),
         rule(0.05em),
-      ),
-      ..data.rows.map(row => row.map(cell)).flatten(),
-      rule(0.05em),
-      table.cell(colspan: 6, align: left, cell(data.footer)),
-      rule(0.08em),
+      )
+    }
+    let footer = block(
+      width: 100%,
+      inset: inset,
+      align(left, par(justify: false, first-line-indent: 0pt, cell(data.footer))),
     )
+    footer
+    line(length: 100%, stroke: 0.08em)
   },
 )
 <tab:deviations>
