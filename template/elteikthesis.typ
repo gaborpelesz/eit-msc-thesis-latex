@@ -7,6 +7,11 @@
 //
 // Requires Typst 0.15 (tested with 0.15.1). No Typst Universe packages.
 //
+// Deviation from the class: the page margins follow the faculty's formal
+// thesis requirements (A4, 12pt, justified, 1.5 line spacing; margins inside,
+// outside, top and bottom 2.5 cm), which override the class's 35 mm inner
+// margin. See `_margin-inside`.
+//
 // Mapping of the LaTeX class to this module
 //   \documentclass options   -> parameters of `elteikthesis` (parspace,
 //                               noindent, nohyp, twoside, draft, final)
@@ -135,7 +140,10 @@
 #let _single-leading = 14.5pt - 12pt       // floats, captions (setspace)
 #let _parindent = 17.62pt                  // 1.5em of cmr12
 #let _topskip-shift = 15pt - 0.7 * 12pt    // first baseline 15pt below text top
-#let _textwidth = 210mm - 35mm - 25mm
+// Formal requirements: 2.5 cm on every side (the class has a 35 mm inner margin).
+#let _margin-inside = 25mm
+#let _margin-outside = 25mm
+#let _textwidth = 210mm - _margin-inside - _margin-outside
 #let _em = 11.74pt                         // em (quad) of cmr12 at 12pt
 #let _float-heading-extra = 4pt            // measured: [H] float followed by a heading
 
@@ -277,9 +285,11 @@
       let page-w = 210mm
       // \reversemarginpar: notes go to the inner margin (left in oneside).
       let left-side = not _twoside.get() or calc.odd(pos.page)
-      let inner = 35mm
+      let inner = _margin-inside
       let sep = 10pt   // \marginparsep
-      let w = 30mm     // \marginparwidth
+      // \marginparwidth is 30mm in the class; narrowed so notes fit in the
+      // 2.5 cm margin with a 3 mm gap to the paper edge.
+      let w = inner - sep - 3mm
       let x = if left-side { inner - sep - w } else { page-w - inner + sep }
       let anchor = if left-side { x + w } else { x }
       let raise = 0.9em.to-absolute()
@@ -791,9 +801,9 @@
   set page(
     paper: "a4",
     margin: if twoside {
-      (inside: 35mm, outside: 25mm, top: 25mm + _topskip-shift, bottom: 25mm)
+      (inside: _margin-inside, outside: _margin-outside, top: 25mm + _topskip-shift, bottom: 25mm)
     } else {
-      (left: 35mm, right: 25mm, top: 25mm + _topskip-shift, bottom: 25mm)
+      (left: _margin-inside, right: _margin-outside, top: 25mm + _topskip-shift, bottom: 25mm)
     },
     header: _header(),
     header-ascent: 25mm + _topskip-shift - 46.44pt,

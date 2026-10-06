@@ -53,6 +53,24 @@ fonts and the entry file, e.g. in `.vscode/settings.json`:
 Open `main.typ` and pin it as the main file ("Typst: Pin the main file") so
 previews of chapter files render the whole document.
 
+## Formal requirements
+
+The faculty's formal requirements for the thesis (retrieved from its website on
+2026-10-06) take precedence over the template:
+
+- white A4 paper, 12 pt type, justified lines, 1.5 line spacing;
+- margins of 2.5 cm inside, outside, top and bottom;
+- Arabic page numbers, continuous from the contents to the bibliography;
+- every main chapter (level-1 heading) starts on a new page;
+- about 50 pages.
+
+The template follows them. Where the original class differed (a 35 mm inner
+margin), the requirement wins; the template header and `_margin-inside` in
+`template/elteikthesis.typ` record the deviation. With the 2.5 cm margin,
+margin todos are narrow: use `#todo(inline: true)[…]` for long ones, since a
+long margin note near the foot of a page runs off it (drafts only; `final:
+true` hides all todos).
+
 ## Template
 
 `template/elteikthesis.typ` is a Typst port of the LaTeX class
