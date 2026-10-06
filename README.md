@@ -14,7 +14,7 @@ the measurements and generated tables quoted here.
 |---|---|
 | `main.typ` | entry point: metadata, front matter, chapters, back matter |
 | `chapters/*.typ` | the chapters |
-| `my_thesis.bib` | bibliography (BibTeX) |
+| `thesis.bib` | bibliography (BibTeX) |
 | `generated/` | tables generated in the superproject (see below); never edited by hand |
 | `images/` | figures; `elte_cimer_szines.pdf` is the ELTE logo |
 | `template/` | the ELTE FI thesis template (Typst port of elteikthesis, see below) |
@@ -95,7 +95,7 @@ into the margin, as in LaTeX; break them by hand with `\`.
 
 ## Bibliography
 
-`my_thesis.bib` is rendered by `template/biblatex-numeric-{en,hu}.csl`,
+`thesis.bib` is rendered by `template/biblatex-numeric-{en,hu}.csl`,
 which imitate biblatex's `numeric` style (regenerate them with
 `python3 template/tools/gen_csl.py` after editing the generator).
 The styles mark the type field and Hungarian chapter numbers with private-use

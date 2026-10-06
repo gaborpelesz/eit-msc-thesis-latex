@@ -1,26 +1,29 @@
 // MSc thesis — entry point (ported from the former LaTeX my_thesis.tex).
 // Build: `make build` (Typst 0.15.1) -> build/thesis.pdf
+
+// official ELTE IK thesis template ported from LaTeX to Typst
+// https://github.com/mcserep/elteikthesis
 #import "template/elteikthesis.typ": *
 
 #show: elteikthesis.with(
-  // Class options (see the parameters of `elteikthesis`):
-  // parspace: true,  // Add vertical space between paragraphs
-  // noindent: true,  // No indentation of first lines in each paragraph
-  // nohyp: true,     // No hyphenation of words
-  // twoside: true,   // Double sided format
-  // draft: true,     // Quicker draft compilation without rendering images
-  // final: true,     // Set final to hide todos
+  // class options as ported from the original repo (see the parameters of `elteikthesis`):
+  // parspace: true,  // adds vertical space between paragraphs
+  // noindent: true,  // no indentation of first lines in each paragraph, use with parspace
+  // nohyp: true,     // no hyphenation of words, probably never use
+  // twoside: true,   // double sided format
+  // draft: true,     // quicker draft compilation without rendering images, this doesn't matter in Typst as it is already fast
+  // final: true,     // set final to hide todos
 
   // Document's metadata
-  title: [High-Performance Patch-Match Multi-View Stereo: Separating Algorithmic Cost from Implementation Overhead],
+  title: [High-Performance Patch-Match \ Multi-View Stereo: Separating Algorithmic Cost from Implementation Overhead],
   year: [2026], // year of defense
 
   // Author's metadata
-  author: [[AUTHOR NAME]],
-  degree: [Computer Science MSc],
+  author: [Gabor Pelesz],
+  degree: [Autonomous Systems MSc],
 
   // Supervisor(s)' metadata
-  supervisor: [[SUPERVISOR NAME]], // internal supervisor's name
+  supervisor: [Adam Istvan Szucs], // internal supervisor's name
   affiliation: [[SUPERVISOR AFFILIATION]], // internal supervisor's affiliation
   // ext-supervisor: [[EXTERNAL SUPERVISOR NAME]], // external supervisor's name
   // ext-affiliation: [[EXTERNAL SUPERVISOR AFFILIATION]], // external supervisor's affiliation
@@ -28,7 +31,6 @@
   // University's metadata
   university: [Eötvös Loránd University],
   faculty: [Faculty of Informatics],
-  department: [[DEPARTMENT]],
   city: [Budapest],
   logo: image("images/elte_cimer_szines.pdf"),
 
@@ -45,7 +47,7 @@
 #include "chapters/benchmarks.typ"
 // Not included in the LaTeX build (of the author's chapters, my_thesis.tex input only benchmarks.tex);
 // whether to include it is the author's decision.
-// #include "chapters/mvs_methods.typ"
+#include "chapters/mvs_methods.typ"
 
 // Acknowledgements (optional)
 #heading(numbering: none)[#tr("acknowledgements")]
@@ -56,7 +58,7 @@
 // #include "chapters/<appendix>.typ"
 
 // Bibliography (mandatory)
-#bibliography("my_thesis.bib")
+#bibliography("thesis.bib")
 
 // List of figures (optional)
 #list-of-figures()
