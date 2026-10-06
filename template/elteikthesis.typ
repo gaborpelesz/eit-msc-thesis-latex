@@ -225,6 +225,18 @@
 // \slshape: LM Roman Slanted 12 (cmsl12)
 #let _slanted(body) = text(font: _rm12, style: "oblique", body)
 
+// Plain text of simple content (for PDF metadata).
+#let _plain-text(it) = {
+  if it == none { return "" }
+  if type(it) == str { return it }
+  if type(it) != content { return str(it) }
+  if it.has("text") { return it.text }
+  if it.has("children") { return it.children.map(_plain-text).join("") }
+  if it.has("body") { return _plain-text(it.body) }
+  if it.func() == [ ].func() { return " " }
+  ""
+}
+
 // \bigskip, \medskip, \smallskip
 #let bigskip = v(12pt)
 #let medskip = v(6pt)
@@ -242,8 +254,7 @@
 #let _todo-fill = rgb(255, 128, 0).lighten(90%)
 #let _todo-stroke = rgb(255, 128, 0)
 
-#let todo(body, inline: false) = context {
-  if _final.get() { return }
+#let todo(body, inline: false) = {
   let note(width) = block(
     width: width, fill: _todo-fill, stroke: 0.5pt + _todo-stroke, radius: 2pt,
     inset: 3pt, breakable: false,
@@ -256,25 +267,48 @@
       body
     },
   )
-  [#metadata(body)<elte-todo>]
-  if inline {
-    block(above: 6pt, below: 6pt, note(100%))
-  } else {
-    let pos = here().position()
-    let page-w = 210mm
-    // \reversemarginpar: notes go to the inner margin (left in oneside).
-    let left-side = not _twoside.get() or calc.odd(pos.page)
-    let inner = 35mm
-    let sep = 10pt   // \marginparsep
-    let w = 30mm     // \marginparwidth
-    let x = if left-side { inner - sep - w } else { page-w - inner + sep }
-    let anchor = if left-side { x + w } else { x }
-    box(width: 0pt, {
-      place(dx: anchor - pos.x, dy: 2pt,
-        line(length: pos.x - anchor, stroke: 0.5pt + _todo-stroke))
-      place(dx: x - pos.x, dy: -0.9em, note(w))
-    })
+  context {
+    if _final.get() { return }
+    if inline {
+      block(above: 6pt, below: 6pt, note(100%))
+    } else {
+      let pos = here().position()
+      let page-w = 210mm
+      // \reversemarginpar: notes go to the inner margin (left in oneside).
+      let left-side = not _twoside.get() or calc.odd(pos.page)
+      let inner = 35mm
+      let sep = 10pt   // \marginparsep
+      let w = 30mm     // \marginparwidth
+      let x = if left-side { inner - sep - w } else { page-w - inner + sep }
+      let anchor = if left-side { x + w } else { x }
+      let raise = 0.9em.to-absolute()
+      // Stack below earlier margin notes on this page instead of overlapping
+      // them (todonotes moves colliding notes down as well).
+      let bottom = none
+      for m in query(selector(<elte-todo>).before(here())) {
+        let p = m.location().position()
+        if m.value.inline or p.page != pos.page { continue }
+        let side = not _twoside.get() or calc.odd(p.page)
+        if side != left-side { continue }
+        let top = p.y - raise
+        if bottom != none { top = calc.max(top, bottom + 2pt) }
+        bottom = top + measure(m.value.note).height
+      }
+      let top = pos.y - raise
+      if bottom != none { top = calc.max(top, bottom + 2pt) }
+      let dy = top - pos.y
+      box(width: 0pt, {
+        place(dx: anchor - pos.x, dy: 2pt,
+          line(length: pos.x - anchor, stroke: 0.5pt + _todo-stroke))
+        if dy > -raise + 0.5pt {
+          place(line(start: (anchor - pos.x, 2pt), end: (anchor - pos.x, dy + raise),
+            stroke: 0.5pt + _todo-stroke))
+        }
+        place(dx: x - pos.x, dy: dy, note(w))
+      })
+    }
   }
+  context if not _final.get() [#metadata((body: body, inline: inline, note: note(30mm)))<elte-todo>]
 }
 
 // \listoftodos[\todolabel]
@@ -286,7 +320,7 @@
       let p = counter(page).at(t.location()).first()
       block(above: _leading, below: _leading,
         link(t.location(), grid(columns: (1fr, 1.55 * _em),
-          [#t.value #box(width: 1fr, repeat(gap: 5.97pt, justify: false)[.])],
+          [#t.value.body #box(width: 1fr, repeat(gap: 5.97pt, justify: false)[.])],
           align(right, str(p)))))
     }
   }
@@ -464,7 +498,9 @@
   // All lines are laid out baseline to baseline (zero-height lines), so the
   // vertical distances below are the LaTeX baseline distances.
   set text(top-edge: "baseline", bottom-edge: "baseline")
-  set par(first-line-indent: 0pt, justify: false, spacing: 0pt)
+  // Over-long lines run into the margin as in LaTeX; break them by hand
+  // with `\` (e.g. department, affiliation), lines then follow at 20.7pt.
+  set par(first-line-indent: 0pt, justify: false, spacing: 0pt, leading: 14.5pt * _stretch)
   let line(size: _size.normal, it) = block(text(size: size, it))
   // cmcsc10 (lowercase letters are small capitals in this font; the
   // smallcaps() only matters for the fallback font)
@@ -727,10 +763,7 @@
   toc: true,
   body,
 ) = {
-  set document(
-    title: title,
-    author: if type(author) == str { author } else { () },
-  )
+  set document(title: title, author: _plain-text(author))
 
   // ---- page ----------------------------------------------------------------
   set page(
@@ -946,8 +979,10 @@
   show figure.where(kind: "algline"): set block(above: 0pt, below: 0pt)
 
   set table(stroke: 0.4pt, inset: (x: 6pt, top: 1.75pt, bottom: 0.75pt), align: left)
-  show table.cell: set par(first-line-indent: 0pt, justify: true)
-  show table.cell: set text(hyphenate: not nohyp)
+  // Cells are set ragged right and unhyphenated (LaTeX's p{} columns would
+  // be justified; ragged cells read better in narrow data tables).
+  show table.cell: set par(first-line-indent: 0pt, justify: false)
+  show table.cell: set text(hyphenate: false)
 
   // ---- code listings (listings: frame=lines, gray background, numbers) -----
   set raw(theme: "elteikthesis-code.tmTheme", tab-size: 2)
@@ -1044,11 +1079,16 @@
     supplement: it.supplement,
     style: if lang == "hu" { "citeauthor-hu.csl" } else { "citeauthor-en.csl" })
   set bibliography(title: none, style: if lang == "hu" { "biblatex-numeric-hu.csl" } else { "biblatex-numeric-en.csl" })
-  show bibliography: it => {
+  show bibliography: it => context {
+    // biblatex prints nothing (not even the heading) when nothing is cited
+    if not it.full and query(cite).len() == 0 { return }
     [#heading(level: 1, numbering: none)[#tr("bibliography")] <elte-bib>]
     set par(first-line-indent: 0pt, justify: true, spacing: _leading + 4.9pt)
     // \url: \ttfamily at the text size (cmtt12)
     show link: set text(font: _tt12)
+    // biblatex's punctuation tracker: no "." after a title that already
+    // ends in . ? or ! inside the quotes
+    show regex("[.?!][”\"]\."): it => it.text.slice(0, -1)
     it
   }
 

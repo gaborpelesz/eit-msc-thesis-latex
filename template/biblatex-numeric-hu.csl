@@ -2,7 +2,9 @@
 <!--
   Approximation of biblatex's `numeric` style (bibstyle `standard`,
   sorting=none, maxnames=3) as used by elteikthesis v2.4, Hungarian.
-  Part of the Typst port of elteikthesis (MIT licence).
+  Generated; part of the Typst port of elteikthesis (MIT licence).
+  Entry layouts follow biblatex's standard.bbx drivers (article, book,
+  inproceedings, incollection, thesis/report/misc).
 -->
 <style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" demote-non-dropping-particle="never" default-locale="hu-HU">
   <info>
@@ -15,14 +17,16 @@
     <terms>
       <term name="open-quote">„</term>
       <term name="close-quote">”</term>
-      <term name="open-inner-quote">»</term>
-      <term name="close-inner-quote">«</term>
       <term name="editor" form="short">
         <single>szerk.</single>
         <multiple>szerk.</multiple>
       </term>
       <term name="et-al">és tsai.</term>
       <term name="and">és</term>
+      <term name="page" form="short">
+        <single>p.</single>
+        <multiple>pp.</multiple>
+      </term>
       <term name="month-01" form="short">jan.</term>
       <term name="month-02" form="short">febr.</term>
       <term name="month-03" form="short">márc.</term>
@@ -48,43 +52,53 @@
       </substitute>
     </names>
   </macro>
-  <macro name="author-short">
-    <names variable="author">
-      <name form="short" and="text" delimiter=", " et-al-min="4" et-al-use-first="1"/>
-      <substitute>
-        <names variable="editor"/>
-      </substitute>
-    </names>
-  </macro>
-  <macro name="editor-by">
+  <macro name="ed-by">
     <names variable="editor" prefix="Szerk. ">
       <name and="text" delimiter=", " delimiter-precedes-last="never" et-al-min="4" et-al-use-first="1" initialize="false"/>
     </names>
   </macro>
-  <macro name="title-quoted">
-    <text variable="title" quotes="true"/>
+  <macro name="ed-by-after-in">
+    <names variable="editor" prefix="Szerk. ">
+      <name and="text" delimiter=", " delimiter-precedes-last="never" et-al-min="4" et-al-use-first="1" initialize="false"/>
+    </names>
   </macro>
-  <macro name="title-italic">
-    <text variable="title" font-style="italic"/>
+  <!-- In: Booktitle. Ed. by X  /  In: ed. by X (no booktitle) -->
+  <macro name="in-container">
+    <choose>
+      <if variable="container-title">
+        <group delimiter=". ">
+          <group delimiter=" ">
+            
+            <text variable="container-title" font-style="italic"/>
+          </group>
+          <text macro="ed-by"/>
+        </group>
+      </if>
+      <else-if variable="editor">
+        <group delimiter=" ">
+          
+          <text macro="ed-by-after-in"/>
+        </group>
+      </else-if>
+    </choose>
   </macro>
-  <macro name="publisher">
-    <group delimiter=": ">
-      <text variable="publisher-place"/>
-      <text variable="publisher"/>
-    </group>
-  </macro>
-  <macro name="pub-year">
-    <group delimiter=", ">
-      <text macro="publisher"/>
-      <date variable="issued">
-        <date-part name="year"/>
-      </date>
-    </group>
-  </macro>
-  <macro name="pages">
+  <macro name="volume"><group delimiter=" "><text variable="volume" suffix="."/><text value="köt."/></group></macro>
+  <macro name="series">
     <group delimiter=" ">
-      <text variable="page" suffix="."/>
-      <text value="old."/>
+      <text variable="collection-title"/>
+      <text variable="collection-number"/>
+    </group>
+  </macro>
+  <macro name="pages"><group delimiter=" "><text variable="page" suffix="."/><text value="old."/></group></macro>
+  <macro name="date"><date variable="issued"><date-part name="year"/><date-part name="month" form="short" prefix=". "/></date></macro>
+  <!-- location: publisher, date -->
+  <macro name="publisher-date">
+    <group delimiter=", ">
+      <group delimiter=": ">
+        <text variable="publisher-place"/>
+        <text variable="publisher"/>
+      </group>
+      <text macro="date"/>
     </group>
   </macro>
   <macro name="identifiers">
@@ -107,9 +121,6 @@
       </group>
     </group>
   </macro>
-  <macro name="edition">
-    <text variable="edition"/>
-  </macro>
   <citation collapse="citation-number">
     <sort>
       <key variable="citation-number"/>
@@ -126,59 +137,66 @@
         <choose>
           <if type="book" match="any">
             <group delimiter=". ">
-              <text macro="title-italic"/>
-              <text macro="edition"/>
-              <text macro="pub-year"/>
+              <text variable="title" font-style="italic"/>
+              <text variable="edition"/>
+              <text macro="volume"/>
+              <text macro="series"/>
+              <text macro="publisher-date"/>
             </group>
           </if>
           <else-if type="article-journal article-magazine article-newspaper article" match="any">
             <group delimiter=". ">
-              <text macro="title-quoted"/>
+              <text variable="title" quotes="true"/>
               <group delimiter=", ">
                 <group delimiter=" ">
+                  
                   <text variable="container-title" font-style="italic"/>
                   <group delimiter=".">
                     <text variable="volume"/>
                     <text variable="issue"/>
                   </group>
-                  <date variable="issued" prefix="(" suffix=")" delimiter=". ">
-                    <date-part name="year"/>
-                    <date-part name="month" form="short"/>
-                  </date>
+                  <date variable="issued" prefix="(" suffix=")"><date-part name="year"/><date-part name="month" form="short" prefix=". "/></date>
                 </group>
                 <text macro="pages"/>
               </group>
             </group>
           </else-if>
-          <else-if type="chapter paper-conference entry-encyclopedia entry-dictionary" match="any">
+          <else-if type="paper-conference" match="any">
+            <!-- inproceedings -->
             <group delimiter=". ">
-              <text macro="title-quoted"/>
-              <group delimiter=". ">
-                <text variable="container-title" font-style="italic"/>
-                <text macro="editor-by"/>
-              </group>
-              <text macro="pub-year"/>
+              <text variable="title" quotes="true"/>
+              <text macro="in-container"/>
+              <text macro="volume"/>
+              <text macro="series"/>
+              <text variable="authority"/>
               <group delimiter=", ">
-                <group delimiter=" ">
-                  <text variable="chapter-number"/>
-                  <text value="fej."/>
-                </group>
+                <text macro="publisher-date"/>
                 <text macro="pages"/>
               </group>
             </group>
           </else-if>
-          <else-if type="thesis report" match="any">
+          <else-if type="chapter entry-encyclopedia entry-dictionary" match="any">
+            <!-- incollection -->
             <group delimiter=". ">
-              <text macro="title-italic"/>
-              <text variable="genre"/>
-              <text macro="pub-year"/>
+              <text variable="title" quotes="true"/>
+              <text macro="in-container"/>
+              <text macro="volume"/>
+              <text macro="series"/>
+              <text macro="publisher-date"/>
+              <group delimiter=", ">
+                <group delimiter=" "><text variable="chapter-number"/><text value="fej."/></group>
+                <text macro="pages"/>
+              </group>
             </group>
           </else-if>
           <else>
+            <!-- thesis, report, misc, online -->
             <group delimiter=". ">
-              <text macro="title-italic"/>
+              <text variable="title" font-style="italic"/>
+              <text variable="genre"/>
               <text variable="container-title" font-style="italic"/>
-              <text macro="pub-year"/>
+              <text variable="authority"/>
+              <text macro="publisher-date"/>
               <text macro="pages"/>
             </group>
           </else>
