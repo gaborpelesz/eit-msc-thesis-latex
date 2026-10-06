@@ -42,7 +42,10 @@
 // #list-of-todos()
 
 // Main content
-// #include "chapters/<chapter>.typ"
+#include "chapters/benchmarks.typ"
+// Not included in the LaTeX build (my_thesis.tex inputs only benchmarks.tex);
+// whether to include it is the author's decision.
+// #include "chapters/mvs_methods.typ"
 
 // Acknowledgements (optional)
 #heading(numbering: none)[#tr("acknowledgements")]
