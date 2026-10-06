@@ -50,8 +50,8 @@
 #include "chapters/mvs_methods.typ"
 
 // Acknowledgements (optional)
-#heading(numbering: none)[#tr("acknowledgements")]
-#todo(inline: true)[Acknowledgements: to be written by the author.]
+// #heading(numbering: none)[#tr("acknowledgements")]
+// #todo(inline: true)[Acknowledgements: to be written by the author.]
 
 // Appendices (optional)
 #show: appendix
