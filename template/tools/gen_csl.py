@@ -4,7 +4,8 @@ L = {
   "en": dict(name="English", locale="en-US", lang="en", oq="“", cq="”", ed_s="ed.", ed_m="eds.",
              etal="et al.", and_="and", dpl="contextual",
              months=["Jan.","Feb.","Mar.","Apr.","May","June","July","Aug.","Sept.","Oct.","Nov.","Dec."],
-             in_='<text value="In:"/>', edby_after_in="ed. by ", edby="Ed. by ",
+             in_='<text value="In:"/>',
+             urldate='<date variable="accessed" prefix="(visited on " suffix=")"><date-part name="month" form="numeric-leading-zeros" suffix="/"/><date-part name="day" form="numeric-leading-zeros" suffix="/"/><date-part name="year"/></date>', edby_after_in="ed. by ", edby="Ed. by ",
              vol='<group delimiter=" "><text value="Vol."/><text variable="volume"/></group>',
              pages='<group delimiter=" "><label variable="page" form="short"/><text variable="page"/></group>',
              chap='<group delimiter=" "><text value="Chap."/><text variable="chapter-number"/></group>',
@@ -13,7 +14,8 @@ L = {
   "hu": dict(name="Hungarian", locale="hu-HU", lang="hu", oq="„", cq="”", ed_s="szerk.", ed_m="szerk.",
              etal="és tsai.", and_="és", dpl="never",
              months=["jan.","febr.","márc.","ápr.","máj.","jún.","júl.","aug.","szept.","okt.","nov.","dec."],
-             in_='', edby_after_in="Szerk. ", edby="Szerk. ",
+             in_='',
+             urldate='<date variable="accessed" prefix="(elérés dátuma " suffix=")"><date-part name="year" suffix=". "/><date-part name="month" form="numeric-leading-zeros" suffix=". "/><date-part name="day" form="numeric-leading-zeros" suffix="."/></date>', edby_after_in="Szerk. ", edby="Szerk. ",
              vol='<group delimiter=" "><text variable="volume" suffix="."/><text value="köt."/></group>',
              pages='<group delimiter=" "><text variable="page" suffix="."/><text value="old."/></group>',
              chap='<group delimiter=" "><text variable="chapter-number"/><text value="fej."/></group>',
@@ -93,6 +95,17 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
       </else-if>
     </choose>
   </macro>
+  <macro name="journal">
+    <group delimiter=" ">
+      {in_}
+      <text variable="container-title" font-style="italic"/>
+      <group delimiter=".">
+        <text variable="volume"/>
+        <text variable="issue"/>
+      </group>
+      {artdate}
+    </group>
+  </macro>
   <macro name="volume">{vol}</macro>
   <macro name="series">
     <group delimiter=" ">
@@ -102,6 +115,12 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
   </macro>
   <macro name="pages">{pages}</macro>
   <macro name="date">{date}</macro>
+  <macro name="publisher-place-publisher">
+    <group delimiter=": ">
+      <text variable="publisher-place"/>
+      <text variable="publisher"/>
+    </group>
+  </macro>
   <!-- location: publisher, date -->
   <macro name="publisher-date">
     <group delimiter=", ">
@@ -126,9 +145,12 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
         <text value="doi" font-variant="small-caps"/>
         <text variable="DOI"/>
       </group>
-      <group delimiter=": ">
-        <text value="url" font-variant="small-caps"/>
-        <text variable="URL"/>
+      <group delimiter=" ">
+        <group delimiter=": ">
+          <text value="url" font-variant="small-caps"/>
+          <text variable="URL"/>
+        </group>
+        {urldate}
       </group>
     </group>
   </macro>
@@ -152,24 +174,30 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text variable="edition"/>
               <text macro="volume"/>
               <text macro="series"/>
+              <text variable="note"/>
               <text macro="publisher-date"/>
             </group>
           </if>
           <else-if type="article-journal article-magazine article-newspaper article" match="any">
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
-              <group delimiter=", ">
-                <group delimiter=" ">
-                  {in_}
-                  <text variable="container-title" font-style="italic"/>
-                  <group delimiter=".">
-                    <text variable="volume"/>
-                    <text variable="issue"/>
+              <choose>
+                <if variable="note">
+                  <group delimiter=". ">
+                    <text macro="journal"/>
+                    <group delimiter=", ">
+                      <text variable="note"/>
+                      <text macro="pages"/>
+                    </group>
                   </group>
-                  {artdate}
-                </group>
-                <text macro="pages"/>
-              </group>
+                </if>
+                <else>
+                  <group delimiter=", ">
+                    <text macro="journal"/>
+                    <text macro="pages"/>
+                  </group>
+                </else>
+              </choose>
             </group>
           </else-if>
           <else-if type="paper-conference" match="any">
@@ -178,7 +206,12 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text variable="title" quotes="true"/>
               <text macro="in-container"/>
               <text macro="volume"/>
-              <text macro="series"/>
+              <group delimiter=" ">
+                <text variable="collection-title"/>
+                <text variable="collection-number"/>
+                <text variable="issue"/>
+              </group>
+              <text variable="note"/>
               <text variable="authority"/>
               <group delimiter=", ">
                 <text macro="publisher-date"/>
@@ -193,6 +226,7 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text macro="in-container"/>
               <text macro="volume"/>
               <text macro="series"/>
+              <text variable="note"/>
               <text macro="publisher-date"/>
               <group delimiter=", ">
                 {chap}
@@ -200,12 +234,26 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               </group>
             </group>
           </else-if>
+          <else-if type="thesis report" match="any">
+            <!-- thesis: title. type. institution, date -->
+            <group delimiter=". ">
+              <text variable="title" font-style="italic"/>
+              <text variable="genre"/>
+              <text variable="note"/>
+              <group delimiter=", ">
+                <text variable="authority"/>
+                <text macro="publisher-place-publisher"/>
+                <text macro="date"/>
+              </group>
+            </group>
+          </else-if>
           <else>
-            <!-- thesis, report, misc, online -->
+            <!-- online, misc, software: title. note. organization/publisher, date -->
             <group delimiter=". ">
               <text variable="title" font-style="italic"/>
               <text variable="genre"/>
               <text variable="container-title" font-style="italic"/>
+              <text variable="note"/>
               <text variable="authority"/>
               <text macro="publisher-date"/>
               <text macro="pages"/>
