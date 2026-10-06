@@ -1114,6 +1114,10 @@
     supplement: it.supplement,
     style: if lang == "hu" { "citeauthor-hu.csl" } else { "citeauthor-en.csl" })
   set bibliography(title: none, style: if lang == "hu" { "biblatex-numeric-hu.csl" } else { "biblatex-numeric-en.csl" })
+  // Limits of Typst's bibliography engine (hayagriva, Typst 0.15.1): the
+  // BibTeX fields `version` and an @inproceedings' `organization` never reach
+  // the CSL style, and `howpublished` arrives only when the entry has no
+  // `note` (as the note). Put a software version in `note`; see README.
   show bibliography: it => context {
     // biblatex prints nothing (not even the heading) when nothing is cited
     if not it.full and query(cite).len() == 0 { return }
@@ -1124,6 +1128,9 @@
     // biblatex's punctuation tracker: no "." after a title that already
     // ends in . ? or ! inside the quotes
     show regex("[.?!][”\"]\."): it => it.text.slice(0, -1)
+    // italic titles carry their period inside the italic run (see the CSL
+    // macro title-italic), so the same rule works for "Book!" / "Title."
+    show emph: it => { show regex("[.?!]\.$"): m => m.text.slice(0, -1); it }
     // thesis type strings (hayagriva's English genre -> biblatex bibstrings)
     show "Doctoral dissertation": if lang == "hu" [Disszertáció] else [PhD thesis]
     show "Master's thesis": if lang == "hu" [Diplomaterv] else [MA thesis]

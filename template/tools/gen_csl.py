@@ -106,11 +106,29 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
       {artdate}
     </group>
   </macro>
+  <!-- italic title followed by its period inside the italic run, so the
+       template can drop the period after a title ending in ! or ? -->
+  <macro name="title-italic">
+    <text variable="title" font-style="italic" suffix="."/>
+  </macro>
   <macro name="volume">{vol}</macro>
+  <!-- series + number; hayagriva passes a @book/@incollection/@inproceedings
+       `number` as `issue` -->
   <macro name="series">
     <group delimiter=" ">
       <text variable="collection-title"/>
       <text variable="collection-number"/>
+      <text variable="issue"/>
+    </group>
+  </macro>
+  <!-- biblatex organization+location+date: "Location: Organization, Date" -->
+  <macro name="organization-date">
+    <group delimiter=", ">
+      <group delimiter=": ">
+        <text variable="publisher-place"/>
+        <text variable="authority"/>
+      </group>
+      <text macro="date"/>
     </group>
   </macro>
   <macro name="pages">{pages}</macro>
@@ -169,13 +187,15 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
         <text macro="names-author"/>
         <choose>
           <if type="book" match="any">
-            <group delimiter=". ">
-              <text variable="title" font-style="italic"/>
+            <group delimiter=" ">
+              <text macro="title-italic"/>
+              <group delimiter=". ">
               <text variable="edition"/>
               <text macro="volume"/>
               <text macro="series"/>
               <text variable="note"/>
               <text macro="publisher-date"/>
+              </group>
             </group>
           </if>
           <else-if type="article-journal article-magazine article-newspaper article" match="any">
@@ -206,11 +226,7 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text variable="title" quotes="true"/>
               <text macro="in-container"/>
               <text macro="volume"/>
-              <group delimiter=" ">
-                <text variable="collection-title"/>
-                <text variable="collection-number"/>
-                <text variable="issue"/>
-              </group>
+              <text macro="series"/>
               <text variable="note"/>
               <text variable="authority"/>
               <group delimiter=", ">
@@ -227,19 +243,32 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text macro="volume"/>
               <text macro="series"/>
               <text variable="note"/>
-              <text macro="publisher-date"/>
-              <group delimiter=", ">
-                {chap}
-                <text macro="pages"/>
-              </group>
+              <choose>
+                <if variable="chapter-number">
+                  <group delimiter=". ">
+                    <text macro="publisher-date"/>
+                    <group delimiter=", ">
+                      {chap}
+                      <text macro="pages"/>
+                    </group>
+                  </group>
+                </if>
+                <else>
+                  <group delimiter=", ">
+                    <text macro="publisher-date"/>
+                    <text macro="pages"/>
+                  </group>
+                </else>
+              </choose>
             </group>
           </else-if>
-          <else-if type="thesis report" match="any">
-            <!-- thesis: title. type. institution, date -->
+          <else-if type="thesis" match="any">
+            <!-- thesis: "Title". Note. Type. Institution, Date (biblatex
+                 quotes thesis titles) -->
             <group delimiter=". ">
-              <text variable="title" font-style="italic"/>
-              <text variable="genre"/>
+              <text variable="title" quotes="true"/>
               <text variable="note"/>
+              <text variable="genre"/>
               <group delimiter=", ">
                 <text variable="authority"/>
                 <text macro="publisher-place-publisher"/>
@@ -247,16 +276,34 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               </group>
             </group>
           </else-if>
+          <else-if type="report" match="any">
+            <group delimiter=" ">
+              <text macro="title-italic"/>
+              <group delimiter=". ">
+              <text variable="genre"/>
+              <text variable="note"/>
+              <group delimiter=", ">
+                <text variable="authority"/>
+                <text macro="publisher-place-publisher"/>
+                <text macro="date"/>
+              </group>
+              </group>
+            </group>
+          </else-if>
           <else>
-            <!-- online, misc, software: title. note. organization/publisher, date -->
-            <group delimiter=". ">
-              <text variable="title" font-style="italic"/>
+            <!-- online, misc, software (biblatex @misc driver; @software is
+                 its alias): Title. Howpublished/Note. Location: Organization,
+                 Date. No publisher. hayagriva passes `howpublished` as `note`
+                 when the entry has no note of its own. -->
+            <group delimiter=" ">
+              <text macro="title-italic"/>
+              <group delimiter=". ">
               <text variable="genre"/>
               <text variable="container-title" font-style="italic"/>
               <text variable="note"/>
-              <text variable="authority"/>
-              <text macro="publisher-date"/>
+              <text macro="organization-date"/>
               <text macro="pages"/>
+              </group>
             </group>
           </else>
         </choose>

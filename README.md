@@ -75,6 +75,39 @@ LaTeX examples.
 Title-page lines that are too long (department, supervisor, affiliation) run
 into the margin, as in LaTeX; break them by hand with `\`.
 
+## Bibliography
+
+`my_thesis.bib` is rendered by `template/biblatex-numeric-{en,hu}.csl`,
+which imitate biblatex's `numeric` style (regenerate them with
+`python3 template/tools/gen_csl.py` after editing the generator).
+Typst's bibliography engine (hayagriva, as bundled with Typst 0.15.1) has a
+few limits that no style can work around:
+
+- `version` is never passed to the style, nor an `@inproceedings`'
+  `organization` (so e.g. "IEEE." is not printed);
+- `howpublished` arrives only if the entry has no `note` (it is then printed
+  where biblatex prints `howpublished`); with both, only `note` is printed.
+
+For the method forks on GitHub, put the version or commit in `note` and give
+the URL with its access date. This pattern renders as
+"Given Surname. *ACMH (fork for the thesis benchmark).* Fork of Xu and Tao's
+ACMH release, commit 0123abc. 2026. url: https://github.com/gaborpelesz/ACMH
+(visited on 10/06/2026)." (in Hungarian: "… (elérés dátuma 2026. 10. 06.)"):
+
+```bibtex
+@software{fork_acmh,
+  author  = {Surname, Given},
+  title   = {{ACMH} (fork for the thesis benchmark)},
+  note    = {Fork of Xu and Tao's ACMH release, commit 0123abc},
+  url     = {https://github.com/gaborpelesz/ACMH},
+  urldate = {2026-10-06},
+  year    = {2026},
+}
+```
+
+`@online` works the same way. Do not rely on `publisher` for `@software`:
+biblatex treats `@software` as `@misc`, which does not print a publisher.
+
 ## Generated tables
 
 Tables in `generated/` come from the superproject and are never edited here:
