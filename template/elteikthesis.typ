@@ -115,6 +115,17 @@
   normal: 12pt, large: 14.4pt, Large: 17.28pt, LARGE: 20.74pt,
   huge: 24.88pt, Huge: 24.88pt,
 )
+// Fonts: Latin Modern (template/fonts, GUST Font License), optical sizes as
+// LaTeX's OT1 Computer Modern picks them; New Computer Modern as fallback
+// (missing glyphs, or when template/fonts is not on the font path).
+#let _fallback = ("New Computer Modern",)
+#let _rm12 = ("Latin Modern Roman 12", .._fallback)   // cmr12, cmbx12 (also > 12pt), cmti12, cmsl12
+#let _rm10 = ("Latin Modern Roman", .._fallback)      // cmr10 (\small, \footnotesize), cmbxti10
+#let _rm6 = ("Latin Modern Roman 6", .._fallback)     // cmr6 (\tiny)
+#let _sc = ("Latin Modern Roman Caps", .._fallback)   // cmcsc10
+#let _tt10 = ("Latin Modern Mono", "DejaVu Sans Mono") // cmtt10
+#let _tt12 = ("Latin Modern Mono 12", "Latin Modern Mono", "DejaVu Sans Mono") // cmtt12
+
 // \setstretch{1.427465}: 14.5pt baselineskip of 12pt report -> ~20.62pt
 #let _stretch = 1.427465
 #let _baseline = 20.62pt
@@ -211,7 +222,8 @@
 // -----------------------------------------------------------------------------
 // \slshape: Computer Modern Slanted has no counterpart in New Computer Modern;
 // emulate it by skewing the upright face (cmsl slant = 1/6).
-#let _slanted(body) = box(skew(ax: -9.46deg, reflow: false, body))
+// \slshape: LM Roman Slanted 12 (cmsl12)
+#let _slanted(body) = text(font: _rm12, style: "oblique", body)
 
 // \bigskip, \medskip, \smallskip
 #let bigskip = v(12pt)
@@ -236,7 +248,7 @@
     width: width, fill: _todo-fill, stroke: 0.5pt + _todo-stroke, radius: 2pt,
     inset: 3pt, breakable: false,
     {
-      set text(size: _size.small, style: "normal", weight: "regular",
+      set text(font: _rm10, size: _size.small, style: "normal", weight: "regular",
         top-edge: 0.7em, bottom-edge: -0.3em)
       set par(leading: 0.2em, justify: false, first-line-indent: 0pt,
         hanging-indent: 0pt, spacing: 0.2em)
@@ -348,7 +360,7 @@
       (l.at(0), l.at(1), l.at(2, default: none), l.at(3, default: none))
     } else { (0, l, none, none) }
     let num = figure(kind: "algline", supplement: tr("step"), numbering: "1",
-      outlined: false, text(size: _size.footnotesize)[#i:])
+      outlined: false, text(font: _rm10, size: _size.footnotesize)[#i:])
     let num = if lbl != none [#num#lbl] else { num }
     rows.push(if numbered { align(right, num) } else { [] })
     rows.push(pad(left: level * 1.5 * _em, {
@@ -454,7 +466,9 @@
   set text(top-edge: "baseline", bottom-edge: "baseline")
   set par(first-line-indent: 0pt, justify: false, spacing: 0pt)
   let line(size: _size.normal, it) = block(text(size: size, it))
-  let sc(size, it) = text(size: size, smallcaps(all: false, it))
+  // cmcsc10 (lowercase letters are small capitals in this font; the
+  // smallcaps() only matters for the fallback font)
+  let sc(size, it) = text(font: _sc, size: size, smallcaps(all: false, it))
 
   // University / faculty / department, next to the logo (a tabular whose
   // first column is the logo moved left by 1cm).
@@ -539,7 +553,7 @@
 
 #let _toc-line(indent, numwidth, number, title, page, leaders: true, bold: false) = {
   set par(first-line-indent: 0pt, hanging-indent: 0pt, justify: false, leading: _leading)
-  set text(weight: if bold { "bold" } else { "regular" })
+  set text(weight: if bold { "bold" } else { "regular" }, hyphenate: false)
   grid(columns: (indent, numwidth, 1fr, _toc-pnum),
     [], number,
     pad(right: if leaders { 0pt } else { _toc-rmarg - _toc-pnum },
@@ -739,7 +753,7 @@
   let indent = if noindent { 0pt } else if parspace { 18.06pt } else { _parindent }
   _indent.update(indent)
   set text(
-    font: "New Computer Modern",
+    font: _rm12,
     size: 12pt,
     lang: lang,
     hyphenate: not nohyp,
@@ -753,7 +767,12 @@
     spacing: if parspace { _leading + 0.5 * 14.5pt * _stretch } else { _leading },
     first-line-indent: (amount: indent, all: true),
   )
-  show raw: set text(font: ("DejaVu Sans Mono",))
+  // \texttt: same size as the surrounding text (Typst's default is 0.8em)
+  show raw: set text(font: _tt12)
+  show raw.where(block: false): set text(size: 1em / 0.8)
+  // bold italic: cmbxti10 (LM Roman 12 has no bold italic)
+  show strong: it => { show emph: set text(font: _rm10); it }
+  show emph: it => { show strong: set text(font: _rm10); it }
   set math.equation(numbering: _equation-numbering)
   show math.equation.where(block: true): set block(above: 21.2pt, below: 20.7pt)
   show math.equation.where(block: true): set align(center)
@@ -911,12 +930,14 @@
     }
     if fig-kind == "subfigure" {
       return {
-        set text(size: _size.small)
+        set text(font: _rm10, size: _size.small, hyphenate: false)
         set par(justify: false, first-line-indent: 0pt, leading: 13.6pt - _size.small)
         align(center, block([#n #it.body]))
       }
     }
     let head = if n == none { none } else if _is-hu() [#n. #it.supplement.] else [#it.supplement #n:]
+    // justification=centering: centred lines, which TeX does not hyphenate
+    set text(hyphenate: false)
     set par(justify: false, first-line-indent: 0pt, leading: _single-leading)
     align(center, block([#head #it.body]))
   }
@@ -931,12 +952,12 @@
   // ---- code listings (listings: frame=lines, gray background, numbers) -----
   set raw(theme: "elteikthesis-code.tmTheme", tab-size: 2)
   show raw.where(block: true): it => {
-    set text(size: _size.footnotesize, top-edge: 0.7em, bottom-edge: -0.3em)
+    set text(font: _tt10, size: _size.footnotesize, top-edge: 0.7em, bottom-edge: -0.3em)
     set par(leading: _size.footnotesize * _stretch * 1.2 - _size.footnotesize, justify: false,
       first-line-indent: 0pt)
     show raw.line: l => {
       box(width: 0pt, height: 0pt, place(bottom + right, dx: -5pt,
-        text(font: "New Computer Modern", size: _size.tiny, bottom-edge: "baseline", str(l.number))))
+        text(font: _rm6, size: _size.tiny, bottom-edge: "baseline", str(l.number))))
       l.body
     }
     block(width: 100%, fill: luma(242), stroke: (top: 0.4pt, bottom: 0.4pt),
@@ -991,7 +1012,8 @@
   show footnote.entry: it => {
     let loc = it.note.location()
     let n = numbering(it.note.numbering, ..counter(footnote).at(loc))
-    set text(size: _size.footnotesize, bottom-edge: "baseline")
+    set text(font: _rm10, size: _size.footnotesize, bottom-edge: "baseline")
+    show raw: set text(font: _tt10)
     set par(leading: 0.5em, first-line-indent: 0pt, hanging-indent: 0pt, spacing: 0.5em)
     block([#box(width: 1.8em, align(right, super(n)))#it.note.body])
   }
@@ -1025,7 +1047,8 @@
   show bibliography: it => {
     [#heading(level: 1, numbering: none)[#tr("bibliography")] <elte-bib>]
     set par(first-line-indent: 0pt, justify: true, spacing: _leading + 4.9pt)
-    show link: set text(font: "DejaVu Sans Mono", size: 0.9em)
+    // \url: \ttfamily at the text size (cmtt12)
+    show link: set text(font: _tt12)
     it
   }
 
@@ -1034,7 +1057,7 @@
     layout(region => {
       let s = measure(it, width: region.width)
       box(width: s.width, height: s.height, stroke: 0.4pt,
-        align(center + horizon, text(size: _size.small, if type(it.source) == str { raw(it.source) } else [image])))
+        align(center + horizon, text(font: _rm10, size: _size.small, if type(it.source) == str { raw(it.source) } else [image])))
     })
   } else { it }
 
