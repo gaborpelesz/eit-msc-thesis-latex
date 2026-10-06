@@ -1,4 +1,4 @@
-// MSc thesis — entry point (Typst port of my_thesis.tex).
+// MSc thesis — entry point (ported from the former LaTeX my_thesis.tex).
 // Build: `make build` (Typst 0.15.1) -> build/thesis.pdf
 #import "template/elteikthesis.typ": *
 
