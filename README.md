@@ -32,7 +32,9 @@ make clean    # remove build/thesis.pdf
 
 The template uses the Latin Modern fonts in `template/fonts/`, so every Typst
 call needs `--font-path template/fonts`; the Makefile passes it. Without it,
-Typst warns about unknown font families and falls back to New Computer Modern.
+Typst warns about unknown font families and falls back to New Computer Modern
+for text and to DejaVu Sans Mono for code. Mathematics is always set in
+New Computer Modern Math (Typst's bundled Computer Modern math font).
 For direct CLI use, `export TYPST_FONT_PATHS=template/fonts` has the same effect.
 
 ### Editor setup (Tinymist)
@@ -79,10 +81,14 @@ Tables in `generated/` come from the superproject and are never edited here:
 
 - `deviations.*` and `methods-provenance.*` — from the method manifest and the
   forks: `uv run deviations render` (in the superproject's `benchmark/`).
-- `results-<campaign>-*` — from a campaign's result store:
+- `results-<campaign>-*` — result tables from a campaign's result store:
   `uv run python -m report render <campaign dir>`. These are git-ignored by
   `generated/.gitignore` and committed deliberately (`git add -f`) only for the
   campaign the thesis quotes.
+- Figures: the renderer currently writes pgfplots (LaTeX) figure sources under
+  `generated/figures/`, which Typst cannot use. Generated figures are not yet
+  available for the Typst manuscript; how they will be produced is pending
+  the author's decision. Do not commit those `.tex` figure sources here.
 
 Workflow: render in the superproject, commit the files here, then bump this
 submodule in the superproject.
