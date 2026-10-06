@@ -80,6 +80,9 @@ into the margin, as in LaTeX; break them by hand with `\`.
 `my_thesis.bib` is rendered by `template/biblatex-numeric-{en,hu}.csl`,
 which imitate biblatex's `numeric` style (regenerate them with
 `python3 template/tools/gen_csl.py` after editing the generator).
+The styles mark the type field and Hungarian chapter numbers with private-use
+characters that the template's bibliography rules translate, so they work only
+inside this template.
 Typst's bibliography engine (hayagriva, as bundled with Typst 0.15.1) has a
 few limits that no style can work around:
 

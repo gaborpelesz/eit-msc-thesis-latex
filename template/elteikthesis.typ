@@ -1157,7 +1157,7 @@
     // Roman numerals (magyar.lbx: \ifnumerals -> \mkbibordinal)
     show regex("\u{E002}[^\u{E003}]*\u{E003}"): it => {
       let raw = it.text.slice(3, -3)   // the markers are 3 bytes each in UTF-8
-      if raw.match(regex("^([0-9]+|[IVXLCDM]+|[ivxlcdm]+)$")) != none { raw + "." } else { raw }
+      if raw.match(regex("^([0-9]+|[IVXLCDM]+|[ivxlcdm]+)([-–,/&+ ]+([0-9]+|[IVXLCDM]+|[ivxlcdm]+))*$")) != none { raw + "." } else { raw }
     }
     it
   }
