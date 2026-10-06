@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  \citeauthor of biblatex (family names, maxnames=3) for
+  #cite(<key>, form: "author"). Part of the Typst port of elteikthesis
+  (MIT licence).
+-->
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" default-locale="en-US">
+  <info>
+    <title>elteikthesis citeauthor (en)</title>
+    <id>elteikthesis-citeauthor-en</id>
+    <updated>2026-10-06T00:00:00+00:00</updated>
+  </info>
+  <locale>
+    <terms>
+      <term name="and">and</term>
+      <term name="et-al">et al.</term>
+    </terms>
+  </locale>
+  <citation>
+    <layout delimiter="; ">
+      <names variable="author">
+        <name form="short" and="text" delimiter=", " delimiter-precedes-last="never" et-al-min="4" et-al-use-first="1"/>
+        <substitute>
+          <names variable="editor"/>
+        </substitute>
+      </names>
+    </layout>
+  </citation>
+  <bibliography>
+    <layout>
+      <text variable="title"/>
+    </layout>
+  </bibliography>
+</style>

@@ -126,6 +126,7 @@
 #let _topskip-shift = 15pt - 0.7 * 12pt    // first baseline 15pt below text top
 #let _textwidth = 210mm - 35mm - 25mm
 #let _em = 11.74pt                         // em (quad) of cmr12 at 12pt
+#let _float-heading-extra = 4pt            // measured: [H] float followed by a heading
 
 // -----------------------------------------------------------------------------
 // Internal state
@@ -143,8 +144,9 @@
   "elte-toc": (toc: "contents", style: "list"),
   "elte-lof": (toc: "list-of-figures", style: "list"),
   "elte-lot": (toc: "list-of-tables", style: "list"),
-  "elte-loa": (toc: "list-of-algorithms", style: "list"),
-  "elte-loc": (toc: "list-of-codes", style: "list"),
+  // algorithm.sty and listings print their lists with \chapter*
+  "elte-loa": (toc: "list-of-algorithms", style: "star"),
+  "elte-loc": (toc: "list-of-codes", style: "star"),
   "elte-bib": (toc: "bibliography", style: "star"),
   "elte-los": (toc: "list-of-symbols", style: "star"),
   "elte-todos": (toc: "todo", style: "star"),
@@ -548,7 +550,12 @@
 #let _show-outline-entry(it) = context {
   let el = it.element
   let loc = el.location()
-  let page = str(counter(page).at(loc).first())
+  // LaTeX records the page of \caption (for a longtable: its last page)
+  let page-loc = if el.func() == figure and el.caption != none {
+    let caps = query(figure.caption.where(kind: el.kind).after(loc))
+    if caps.len() > 0 { caps.first().location() } else { loc }
+  } else { loc }
+  let page = str(counter(page).at(page-loc).first())
   let hu = _is-hu()
   let dot(s) = if s == none { none } else if hu { s + "." } else { s }
   let entry = if el.func() == heading {
@@ -556,7 +563,10 @@
     let sp = _special-of(el)
     let title = if sp != none { _tr(sp.toc) } else { el.body }
     if el.level == 1 {
-      block(above: _leading + 1 * _em, below: _leading,
+      // \l@chapter: never leave a chapter line alone at a page bottom
+      let nxt = query(heading.where(outlined: true).after(loc)).filter(h => h.location() != loc)
+      let sticky = nxt.len() > 0 and nxt.first().level > 1
+      block(above: _leading + 1 * _em, below: _leading, sticky: sticky,
         _toc-line(0pt, if num == none { 0pt } else { 1.5 * _em }, dot(num), title, page,
           leaders: false, bold: true))
     } else {
@@ -747,6 +757,12 @@
   set math.equation(numbering: _equation-numbering)
   show math.equation.where(block: true): set block(above: 21.2pt, below: 20.7pt)
   show math.equation.where(block: true): set align(center)
+  // \dots in math (\mathinner{\ldotp\ldotp\ldotp}): spaced dots, not the
+  // tight ellipsis glyph
+  show math.equation: it => {
+    show "…": [#h(1em / 6).#h(1em / 6).#h(1em / 6).#h(1em / 6)]
+    it
+  }
 
   // ---- headings -------------------------------------------------------------
   set heading(numbering: _heading-numbering)
@@ -768,7 +784,8 @@
       }
       let sp = _special-of(it)
       let size = _size.huge
-      set text(size: size, weight: "regular")
+      // report.cls: \huge\bfseries / \Huge\bfseries
+      set text(size: size, weight: "bold", hyphenate: false)
       set par(first-line-indent: 0pt, justify: false, leading: 30pt * _stretch - size)
       let top = 0.7 * size
       if sp != none and sp.style == "list" {
@@ -801,19 +818,31 @@
       } else {
         (_size.normal, 34pt, 26.5pt, 14.5pt)
       }
-      set text(size: size, weight: "bold", top-edge: 8.4pt, bottom-edge: -0.3em)
-      set par(first-line-indent: 0pt, justify: false, leading: gap * _stretch - 8.4pt - 0.3 * size)
+      set text(size: size, weight: "bold", top-edge: 8.4pt, bottom-edge: -0.3em, hyphenate: false)
+      let above = before - 0.3 * 12pt - 8.4pt
       block(
-        above: before - 0.3 * 12pt - 8.4pt,
+        above: above,
         below: after - 0.3 * size - 0.7 * 12pt,
         sticky: true,
         width: 100%,
-        {
-          if num != none and it.level <= 3 {
-            // \@seccntformat: number + \quad (magyar.ldf: number + "." + 0.5em)
-            context { _heading-num-at(it.location()); if _is-hu() [.#h(0.5em)] else { h(1em) } }
+        context {
+          // LaTeX adds \intextsep of a preceding [H] float to the section skip;
+          // Typst would collapse the two spacings, so add the difference here.
+          let ends = query(selector(<elte-float-end>).before(here()))
+          if ends.len() > 0 {
+            let e = ends.last().location().position()
+            let h = here().position()
+            // listings (\lst@belowskip) leave a little more room than floats
+            let extra = if ends.last().value == repr(raw) { 8.6pt } else { _float-heading-extra }
+            if e.page == h.page and h.y - e.y < above + extra + 2pt { v(extra) }
           }
-          it.body
+          // \@hangfrom: wrapped lines are indented under the title text
+          let num-box = if num != none and it.level <= 3 {
+            [#_heading-num-at(it.location())#if _is-hu() [.#h(0.5em)] else { h(1em) }]
+          } else { none }
+          let hang = if num-box == none { 0pt } else { measure(num-box).width }
+          set par(hanging-indent: hang, leading: gap * _stretch - 8.4pt - 0.3 * size)
+          [#num-box#it.body]
         },
       )
     }
@@ -855,6 +884,23 @@
     // floats are single spaced (setspace)
     set par(leading: _single-leading, spacing: _single-leading, first-line-indent: 0pt)
     it
+  }
+  // A float at the top of a page: LaTeX puts it at the text top (images) or \medskip below it (listings), whereas this port's body starts
+  // _topskip-shift lower (see page margins). Shift it visually.
+  show figure: it => {
+    let float = it.kind in (image, table, raw, "algorithm")
+    // (not tables: a longtable must stay breakable)
+    if it.kind in (image, raw) {
+      context {
+        let top = 25mm + _topskip-shift
+        if it.location().position().y < top + 0.5pt {
+          if it.kind == raw {
+            block(above: 0pt, below: 26.9pt, width: 100%, pad(top: 4.85pt, it))
+          } else { move(dy: -_topskip-shift, it) }
+        } else { it }
+      }
+    } else { it }
+    if float [#metadata(repr(it.kind))<elte-float-end>]
   }
   show figure.caption: it => context {
     let n = if it.numbering == none { none } else { it.counter.display(it.numbering) }
@@ -970,6 +1016,11 @@
   }
 
   // ---- bibliography (biblatex, style=numeric, sorting=none) ----------------
+  // \citeauthor: family names only (the bibliography style would give the
+  // full "E. Dijkstra")
+  show cite.where(form: "author", style: auto): it => cite(it.key, form: "author",
+    supplement: it.supplement,
+    style: if lang == "hu" { "citeauthor-hu.csl" } else { "citeauthor-en.csl" })
   set bibliography(title: none, style: if lang == "hu" { "biblatex-numeric-hu.csl" } else { "biblatex-numeric-en.csl" })
   show bibliography: it => {
     [#heading(level: 1, numbering: none)[#tr("bibliography")] <elte-bib>]
