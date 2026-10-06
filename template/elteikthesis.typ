@@ -1127,23 +1127,38 @@
     show link: set text(font: _tt12)
     // biblatex's punctuation tracker: no "." after a title that already
     // ends in . ? or ! inside the quotes
-    show regex("[.?!][”\"]\."): it => it.text.slice(0, -1)
+    show regex("[.?!…][”\"]\."): it => it.text.slice(0, -1)
     // Italic titles carry their period inside the italic run (CSL macro
     // title-italic); after "?" "!" "…" it is dropped here. After "." the
     // engine has already dropped it.
     show emph: it => { show regex("[?!…]\.$"): m => m.text.slice(0, -1); it }
-    // Thesis/report types: hayagriva passes either its own English genre or
-    // the raw `type` field; print biblatex's (abbreviated) bibstrings.
+    // Thesis/report type: the CSL style wraps the type (hayagriva's English
+    // genre or the raw `type` field) in U+E000..U+E001; only that text is
+    // rewritten, to biblatex's abbreviated bibstrings. The abbreviation's
+    // own period absorbs a following ".".
     let types = if lang == "hu" {
       (phd: "Dissz.", ma: "Dipl.", tech: "Techn. jel.")
     } else {
       (phd: "PhD thesis", ma: "MA thesis", tech: "Tech. rep.")
     }
-    // (an abbreviation's own period absorbs the following ".")
-    let typ(t) = m => if m.text.ends-with(".") and not t.ends-with(".") { t + "." } else { t }
-    show regex("\b(Doctoral dissertation|phdthesis)\b\.?"): typ(types.phd)
-    show regex("\b(Master's thesis|mathesis)\b\.?"): typ(types.ma)
-    show regex("\b(technical report|techreport)\b\.?"): typ(types.tech)
+    let type-keys = (
+      "Doctoral dissertation": "phd", "phdthesis": "phd",
+      "Master's thesis": "ma", "mathesis": "ma",
+      "technical report": "tech", "techreport": "tech",
+    )
+    show regex("\u{E000}[^\u{E001}]*\u{E001}\.?"): it => {
+      let m = it.text.match(regex("\u{E000}([^\u{E001}]*)\u{E001}(\.?)"))
+      let raw = m.captures.at(0)
+      let key = type-keys.at(raw, default: none)
+      let t = if key == none { raw } else { types.at(key) }
+      if m.captures.at(1) != "" and not t.ends-with(".") { t + "." } else { t }
+    }
+    // Hungarian chapter numbers (U+E002..U+E003): ordinal for Arabic and
+    // Roman numerals (magyar.lbx: \ifnumerals -> \mkbibordinal)
+    show regex("\u{E002}[^\u{E003}]*\u{E003}"): it => {
+      let raw = it.text.slice(3, -3)   // the markers are 3 bytes each in UTF-8
+      if raw.match(regex("^([0-9]+|[IVXLCDM]+|[ivxlcdm]+)$")) != none { raw + "." } else { raw }
+    }
     it
   }
 

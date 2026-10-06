@@ -111,7 +111,7 @@
           <group delimiter=". ">
             <text macro="publisher-date"/>
             <group delimiter=", ">
-              <group delimiter=" "><choose><if is-numeric="chapter-number"><text variable="chapter-number" suffix="."/></if><else><text variable="chapter-number"/></else></choose><text value="fej."/></group>
+              <group delimiter=" "><text variable="chapter-number" prefix="" suffix=""/><text value="fej."/></group>
               <text macro="pages"/>
             </group>
           </group>
@@ -210,6 +210,14 @@
       <text variable="citation-number"/>
     </layout>
   </citation>
+  <!--
+    Markers (private-use characters, removed by the template's bibliography
+    show rules, which touch nothing else): U+E000/U+E001 around the
+    thesis/report type, localised to biblatex's bibstrings; U+E002/U+E003
+    around a Hungarian chapter number, made an ordinal ("5." / "V.") when it
+    is an Arabic or Roman numeral, as magyar.lbx does. This style is meant
+    for the elteikthesis template only.
+  -->
   <!--
     Punctuation: an italic title (or booktitle) carries the period that
     follows it inside the italic run and is joined to what follows with a
@@ -327,7 +335,7 @@
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
               <text variable="note"/>
-              <text variable="genre"/>
+              <text variable="genre" prefix="" suffix=""/>
               <text macro="institution-date"/>
               <text macro="identifiers"/>
             </group>
@@ -338,7 +346,7 @@
               <text macro="title-italic"/>
               <group delimiter=". ">
                 <group delimiter=" ">
-                  <text variable="genre"/>
+                  <text variable="genre" prefix="" suffix=""/>
                   <text variable="number"/>
                 </group>
                 <text variable="note"/>
@@ -367,7 +375,7 @@
             <group delimiter=" ">
               <text macro="title-italic"/>
               <group delimiter=". ">
-                <text variable="genre"/>
+                <text variable="genre" prefix="" suffix=""/>
                 <text variable="container-title" font-style="italic"/>
                 <text variable="note"/>
                 <text macro="organization-date"/>

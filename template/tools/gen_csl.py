@@ -18,7 +18,7 @@ L = {
              urldate='<date variable="accessed" prefix="(elérés dátuma " suffix=")"><date-part name="year" suffix=". "/><date-part name="month" form="numeric-leading-zeros" suffix=". "/><date-part name="day" form="numeric-leading-zeros" suffix="."/></date>', edby_after_in="Szerk. ", edby="Szerk. ",
              vol='<group delimiter=" "><text variable="volume" suffix="."/><text value="köt."/></group>',
              pages='<group delimiter=" "><text variable="page" suffix="."/><text value="old."/></group>',
-             chap='<group delimiter=" "><choose><if is-numeric="chapter-number"><text variable="chapter-number" suffix="."/></if><else><text variable="chapter-number"/></else></choose><text value="fej."/></group>',
+             chap='<group delimiter=" "><text variable="chapter-number" prefix="\ue002" suffix="\ue003"/><text value="fej."/></group>',
              artdate='<date variable="issued" prefix="(" suffix=")"><date-part name="year"/><date-part name="month" form="short" prefix=". "/></date>',
              date='<date variable="issued"><date-part name="year"/><date-part name="month" form="short" prefix=". "/></date>'),
 }
@@ -224,6 +224,14 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
     </layout>
   </citation>
   <!--
+    Markers (private-use characters, removed by the template's bibliography
+    show rules, which touch nothing else): U+E000/U+E001 around the
+    thesis/report type, localised to biblatex's bibstrings; U+E002/U+E003
+    around a Hungarian chapter number, made an ordinal ("5." / "V.") when it
+    is an Arabic or Roman numeral, as magyar.lbx does. This style is meant
+    for the elteikthesis template only.
+  -->
+  <!--
     Punctuation: an italic title (or booktitle) carries the period that
     follows it inside the italic run and is joined to what follows with a
     plain space. hayagriva drops that period after a title ending in "."
@@ -340,7 +348,7 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
             <group delimiter=". ">
               <text variable="title" quotes="true"/>
               <text variable="note"/>
-              <text variable="genre"/>
+              <text variable="genre" prefix="\ue000" suffix="\ue001"/>
               <text macro="institution-date"/>
               <text macro="identifiers"/>
             </group>
@@ -351,7 +359,7 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
               <text macro="title-italic"/>
               <group delimiter=". ">
                 <group delimiter=" ">
-                  <text variable="genre"/>
+                  <text variable="genre" prefix="\ue000" suffix="\ue001"/>
                   <text variable="number"/>
                 </group>
                 <text variable="note"/>
@@ -380,7 +388,7 @@ T = '''<?xml version="1.0" encoding="utf-8"?>
             <group delimiter=" ">
               <text macro="title-italic"/>
               <group delimiter=". ">
-                <text variable="genre"/>
+                <text variable="genre" prefix="\ue000" suffix="\ue001"/>
                 <text variable="container-title" font-style="italic"/>
                 <text variable="note"/>
                 <text macro="organization-date"/>
