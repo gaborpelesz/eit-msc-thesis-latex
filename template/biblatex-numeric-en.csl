@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Approximation of biblatex's `numeric` style (bibstyle `standard`,
+  sorting=none, maxnames=3) as used by elteikthesis v2.4, English.
+  Part of the Typst port of elteikthesis (MIT licence).
+-->
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" demote-non-dropping-particle="never" default-locale="en-US">
+  <info>
+    <title>elteikthesis biblatex numeric (English)</title>
+    <id>elteikthesis-biblatex-numeric-en</id>
+    <updated>2026-10-06T00:00:00+00:00</updated>
+  </info>
+  <locale xml:lang="en">
+    <style-options punctuation-in-quote="false"/>
+    <terms>
+      <term name="editor" form="short">
+        <single>ed.</single>
+        <multiple>eds.</multiple>
+      </term>
+      <term name="et-al">et al.</term>
+      <term name="and">and</term>
+      <term name="page" form="short">
+        <single>p.</single>
+        <multiple>pp.</multiple>
+      </term>
+      <term name="month-01" form="short">Jan.</term>
+      <term name="month-02" form="short">Feb.</term>
+      <term name="month-03" form="short">Mar.</term>
+      <term name="month-04" form="short">Apr.</term>
+      <term name="month-05" form="short">May</term>
+      <term name="month-06" form="short">June</term>
+      <term name="month-07" form="short">July</term>
+      <term name="month-08" form="short">Aug.</term>
+      <term name="month-09" form="short">Sept.</term>
+      <term name="month-10" form="short">Oct.</term>
+      <term name="month-11" form="short">Nov.</term>
+      <term name="month-12" form="short">Dec.</term>
+    </terms>
+  </locale>
+  <macro name="names-author">
+    <names variable="author">
+      <name and="text" delimiter=", " delimiter-precedes-last="contextual" et-al-min="4" et-al-use-first="1" initialize="false"/>
+      <substitute>
+        <names variable="editor">
+          <name and="text" delimiter=", " delimiter-precedes-last="contextual" et-al-min="4" et-al-use-first="1" initialize="false"/>
+          <label form="short" prefix=", "/>
+        </names>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="author-short">
+    <names variable="author">
+      <name form="short" and="text" delimiter=", " et-al-min="4" et-al-use-first="1"/>
+      <substitute>
+        <names variable="editor"/>
+      </substitute>
+    </names>
+  </macro>
+  <macro name="editor-by">
+    <names variable="editor" prefix="ed. by ">
+      <name and="text" delimiter=", " delimiter-precedes-last="contextual" et-al-min="4" et-al-use-first="1" initialize="false"/>
+    </names>
+  </macro>
+  <macro name="title-quoted">
+    <text variable="title" quotes="true"/>
+  </macro>
+  <macro name="title-italic">
+    <text variable="title" font-style="italic"/>
+  </macro>
+  <macro name="publisher">
+    <group delimiter=": ">
+      <text variable="publisher-place"/>
+      <text variable="publisher"/>
+    </group>
+  </macro>
+  <macro name="pub-year">
+    <group delimiter=", ">
+      <text macro="publisher"/>
+      <date variable="issued">
+        <date-part name="year"/>
+      </date>
+    </group>
+  </macro>
+  <macro name="pages">
+    <group delimiter=" ">
+      <label variable="page" form="short"/>
+      <text variable="page"/>
+    </group>
+  </macro>
+  <macro name="identifiers">
+    <group delimiter=". ">
+      <group delimiter=": ">
+        <text value="isbn" font-variant="small-caps"/>
+        <text variable="ISBN"/>
+      </group>
+      <group delimiter=": ">
+        <text value="issn" font-variant="small-caps"/>
+        <text variable="ISSN"/>
+      </group>
+      <group delimiter=": ">
+        <text value="doi" font-variant="small-caps"/>
+        <text variable="DOI"/>
+      </group>
+      <group delimiter=": ">
+        <text value="url" font-variant="small-caps"/>
+        <text variable="URL"/>
+      </group>
+    </group>
+  </macro>
+  <macro name="edition">
+    <text variable="edition"/>
+  </macro>
+  <citation collapse="citation-number">
+    <sort>
+      <key variable="citation-number"/>
+    </sort>
+    <layout prefix="[" suffix="]" delimiter=", ">
+      <text variable="citation-number"/>
+    </layout>
+  </citation>
+  <bibliography second-field-align="flush" entry-spacing="0">
+    <layout suffix=".">
+      <text variable="citation-number" prefix="[" suffix="]"/>
+      <group delimiter=". ">
+        <text macro="names-author"/>
+        <choose>
+          <if type="book" match="any">
+            <group delimiter=". ">
+              <text macro="title-italic"/>
+              <text macro="edition"/>
+              <text macro="pub-year"/>
+            </group>
+          </if>
+          <else-if type="article-journal article-magazine article-newspaper article" match="any">
+            <group delimiter=". ">
+              <text macro="title-quoted"/>
+              <group delimiter=", ">
+                <group delimiter=" ">
+                  <text value="In:"/>
+                  <text variable="container-title" font-style="italic"/>
+                  <group delimiter=".">
+                    <text variable="volume"/>
+                    <text variable="issue"/>
+                  </group>
+                  <date variable="issued" prefix="(" suffix=")" delimiter=" ">
+                    <date-part name="month" form="short"/>
+                    <date-part name="year"/>
+                  </date>
+                </group>
+                <text macro="pages"/>
+              </group>
+            </group>
+          </else-if>
+          <else-if type="chapter paper-conference entry-encyclopedia entry-dictionary" match="any">
+            <group delimiter=". ">
+              <text macro="title-quoted"/>
+              <group delimiter=" ">
+                <text value="In:"/>
+                <group delimiter=". ">
+                  <text variable="container-title" font-style="italic"/>
+                  <text macro="editor-by"/>
+                </group>
+              </group>
+              <text macro="pub-year"/>
+              <group delimiter=", ">
+                <group delimiter=" ">
+                  <text value="Chap."/>
+                  <text variable="chapter-number"/>
+                </group>
+                <text macro="pages"/>
+              </group>
+            </group>
+          </else-if>
+          <else-if type="thesis report" match="any">
+            <group delimiter=". ">
+              <text macro="title-italic"/>
+              <text variable="genre"/>
+              <text macro="pub-year"/>
+            </group>
+          </else-if>
+          <else>
+            <group delimiter=". ">
+              <text macro="title-italic"/>
+              <text variable="container-title" font-style="italic"/>
+              <text macro="pub-year"/>
+              <text macro="pages"/>
+            </group>
+          </else>
+        </choose>
+        <text macro="identifiers"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Colours of the elteikthesis \lstset: keywords blue, comments rgb(0,0.6,0),
+  strings rgb(0.58,0,0.82), everything else black.
+-->
+<plist version="1.0">
+<dict>
+  <key>name</key>
+  <string>elteikthesis</string>
+  <key>settings</key>
+  <array>
+    <dict>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#000000</string>
+      </dict>
+    </dict>
+    <dict>
+      <key>scope</key>
+      <string>keyword, storage, keyword.control, keyword.other, storage.type, storage.modifier, constant.language, meta.preprocessor, keyword.control.import, keyword.control.directive</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#0000FF</string>
+      </dict>
+    </dict>
+    <dict>
+      <key>scope</key>
+      <string>keyword.operator, punctuation, meta.preprocessor.include string, string.quoted.other.lt-gt.include</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#000000</string>
+      </dict>
+    </dict>
+    <dict>
+      <key>scope</key>
+      <string>string, string.quoted</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#9400D1</string>
+      </dict>
+    </dict>
+    <dict>
+      <key>scope</key>
+      <string>comment, punctuation.definition.comment</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key>
+        <string>#009900</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>
