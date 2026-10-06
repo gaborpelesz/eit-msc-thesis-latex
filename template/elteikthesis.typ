@@ -226,16 +226,17 @@
 #let _slanted(body) = text(font: _rm12, style: "oblique", body)
 
 // Plain text of simple content (for PDF metadata).
-#let _plain-text(it) = {
+#let _plain-text-raw(it) = {
   if it == none { return "" }
   if type(it) == str { return it }
   if type(it) != content { return str(it) }
   if it.has("text") { return it.text }
-  if it.has("children") { return it.children.map(_plain-text).join("") }
-  if it.has("body") { return _plain-text(it.body) }
-  if it.func() == [ ].func() { return " " }
+  if it.has("children") { return it.children.map(_plain-text-raw).join("") }
+  if it.has("body") { return _plain-text-raw(it.body) }
+  if it.func() == [ ].func() or it.func() == linebreak { return " " }
   ""
 }
+#let _plain-text(it) = _plain-text-raw(it).replace(regex("\s+"), " ").trim()
 
 // \bigskip, \medskip, \smallskip
 #let bigskip = v(12pt)
@@ -298,11 +299,15 @@
       if bottom != none { top = calc.max(top, bottom + 2pt) }
       let dy = top - pos.y
       box(width: 0pt, {
-        place(dx: anchor - pos.x, dy: 2pt,
-          line(length: pos.x - anchor, stroke: 0.5pt + _todo-stroke))
         if dy > -raise + 0.5pt {
-          place(line(start: (anchor - pos.x, 2pt), end: (anchor - pos.x, dy + raise),
+          // displaced note: one straight connector from the text position to
+          // the middle of the note's edge
+          let mid = dy + measure(note(w)).height / 2
+          place(line(start: (0pt, 2pt), end: (anchor - pos.x, mid),
             stroke: 0.5pt + _todo-stroke))
+        } else {
+          place(dx: anchor - pos.x, dy: 2pt,
+            line(length: pos.x - anchor, stroke: 0.5pt + _todo-stroke))
         }
         place(dx: x - pos.x, dy: dy, note(w))
       })
@@ -439,7 +444,7 @@
 // Each line becomes its own numbered `math.equation`; the left- and right-hand
 // sides are set in boxes of common width so the `=` signs line up.
 // -----------------------------------------------------------------------------
-#let align-equations(..rows) = context {
+#let align-equations(..rows) = block(above: 16.2pt, below: 20.7pt, width: 100%, context {
   let atom = box(width: 0pt)   // invisible ordinary atom: keeps the relation spacing
   let rows = rows.pos().map(r => (
     lhs: r.at(0).body,
@@ -450,15 +455,17 @@
   let rows = rows.map(r => r + (wl: w(r.lhs), wr: w([#atom#r.rhs])))
   let wl = calc.max(..rows.map(r => r.wl))
   let wr = calc.max(..rows.map(r => r.wr))
-  let n = rows.len()
-  for (i, r) in rows.enumerate() {
+  // the display skips are the outer block's above/below (outside this
+  // context), so they collapse with neighbouring spacing like a single
+  // equation's; between lines \jot-like 3pt
+  show math.equation: set block(above: 3.7pt, below: 3.7pt)
+  for r in rows {
     let numbered = r.opt != false
     let eq = math.equation(block: true, numbering: if numbered { _equation-numbering } else { none },
       math.display([#h(wl - r.wl)#r.lhs#atom#r.rhs#h(wr - r.wr)]))
-    let eq = if type(r.opt) == label [#eq#r.opt] else { eq }
-    block(above: if i == 0 { auto } else { 3pt }, below: if i == n - 1 { auto } else { 3pt }, width: 100%, align(center, eq))
+    if type(r.opt) == label [#eq#r.opt] else { eq }
   }
-}
+})
 
 // -----------------------------------------------------------------------------
 // Nomenclature (nomencl, options intoc, noprefix, refpage)
@@ -597,8 +604,7 @@
     align(right + bottom, page))
 }
 
-#let _show-outline-entry(it) = context {
-  let el = it.element
+#let _outline-entry(el) = {
   let loc = el.location()
   // LaTeX records the page of \caption (for a longtable: its last page)
   let page-loc = if el.func() == figure and el.caption != none {
@@ -613,27 +619,25 @@
     let sp = _special-of(el)
     let title = if sp != none { _tr(sp.toc) } else { el.body }
     if el.level == 1 {
-      // \l@chapter: never leave a chapter line alone at a page bottom
-      let nxt = query(heading.where(outlined: true).after(loc)).filter(h => h.location() != loc)
-      let sticky = nxt.len() > 0 and nxt.first().level > 1
-      block(above: _leading + 1 * _em, below: _leading, sticky: sticky,
-        _toc-line(0pt, if num == none { 0pt } else { 1.5 * _em }, dot(num), title, page,
-          leaders: false, bold: true))
+      block(above: _leading + 1 * _em, below: _leading,
+        link(loc, _toc-line(0pt, if num == none { 0pt } else { 1.5 * _em }, dot(num), title, page,
+          leaders: false, bold: true)))
     } else {
       let (ind, w) = if el.level == 2 { (1.5 * _em, 2.3 * _em) } else if el.level == 3 {
         (3.8 * _em, 3.2 * _em)
       } else { (7.0 * _em, 4.1 * _em) }
-      block(above: _leading, below: _leading, _toc-line(ind, w, dot(num), title, page))
+      block(above: _leading, below: _leading, link(loc, _toc-line(ind, w, dot(num), title, page)))
     }
   } else {
     // figure, table, code, algorithm entries
     let num = _number-of(el)
     let title = if el.caption != none { el.caption.body } else { [] }
     block(above: _leading, below: _leading,
-      _toc-line(1.5 * _em, 2.3 * _em, dot(num), title, page))
+      link(loc, _toc-line(1.5 * _em, 2.3 * _em, dot(num), title, page)))
   }
-  link(loc, entry)
+  entry
 }
+#let _show-outline-entry(it) = context _outline-entry(it.element)
 
 #let _list-heading(lbl, key) = [#heading(level: 1, numbering: none, outlined: lbl != <elte-toc>,
   bookmarked: lbl != <elte-toc>)[#tr(key)] #lbl]
@@ -648,7 +652,25 @@
 #let table-of-contents() = {
   _list-heading(<elte-toc>, "contents")
   counter(page).update(1)   // \pagenumbering{gobble} restarts the counter
-  outline(title: none, depth: 3, target: heading)
+  // \l@chapter's penalty: a chapter line never ends a page when sections
+  // follow it. The chapter line and its first section entry are set as one
+  // unbreakable block (`sticky` did not hold inside the template's flow).
+  context {
+    let hs = query(heading.where(outlined: true)).filter(h => h.level <= 3)
+    let i = 0
+    while i < hs.len() {
+      let h = hs.at(i)
+      let nxt = hs.at(i + 1, default: none)
+      if h.level == 1 and nxt != none and nxt.level > 1 {
+        block(above: _leading + 1 * _em, below: _leading, breakable: false,
+          _outline-entry(h) + _outline-entry(nxt))
+        i += 2
+      } else {
+        _outline-entry(h)
+        i += 1
+      }
+    }
+  }
   [#metadata("toc") <elte-frontmatter-end>]
 }
 #let list-of-figures() = _list-of(<elte-lof>, "list-of-figures-title", figure.where(kind: image))
@@ -763,7 +785,7 @@
   toc: true,
   body,
 ) = {
-  set document(title: title, author: _plain-text(author))
+  set document(title: _plain-text(title), author: _plain-text(author))
 
   // ---- page ----------------------------------------------------------------
   set page(
@@ -803,12 +825,15 @@
   // \texttt: same size as the surrounding text (Typst's default is 0.8em)
   show raw: set text(font: _tt12)
   show raw.where(block: false): set text(size: 1em / 0.8)
+  // small capitals: LM Roman Caps (cmcsc10); LM Roman 12 has no smcp feature
+  show smallcaps: set text(font: _sc)
   // bold italic: cmbxti10 (LM Roman 12 has no bold italic)
   show strong: it => { show emph: set text(font: _rm10); it }
   show emph: it => { show strong: set text(font: _rm10); it }
   set math.equation(numbering: _equation-numbering)
   show math.equation.where(block: true): set block(above: 21.2pt, below: 20.7pt)
   show math.equation.where(block: true): set align(center)
+  show math.equation.where(block: true): it => { it; [#metadata("equation")<elte-float-end>] }
   // \dots in math (\mathinner{\ldotp\ldotp\ldotp}): spaced dots, not the
   // tight ellipsis glyph
   show math.equation: it => {
@@ -885,16 +910,20 @@
             let e = ends.last().location().position()
             let h = here().position()
             // listings (\lst@belowskip) leave a little more room than floats
-            let extra = if ends.last().value == repr(raw) { 8.6pt } else { _float-heading-extra }
-            if e.page == h.page and h.y - e.y < above + extra + 2pt { v(extra) }
+            // after display maths LaTeX's section skip merges with
+            // \belowdisplayskip: measured 11.76pt less than Typst's sum
+            let kind = ends.last().value
+            let extra = if kind == repr(raw) { 8.6pt } else if kind == "equation" { -11.76pt } else { _float-heading-extra }
+            if e.page == h.page and h.y - e.y < above + calc.max(extra, 0pt) + 2pt { v(extra) }
           }
           // \@hangfrom: wrapped lines are indented under the title text
           let num-box = if num != none and it.level <= 3 {
             [#_heading-num-at(it.location())#if _is-hu() [.#h(0.5em)] else { h(1em) }]
           } else { none }
           let hang = if num-box == none { 0pt } else { measure(num-box).width }
-          set par(hanging-indent: hang, leading: gap * _stretch - 8.4pt - 0.3 * size)
-          [#num-box#it.body]
+          // an explicit paragraph: no first-line indent, wrapped lines hang
+          par(first-line-indent: 0pt, hanging-indent: hang, justify: false,
+            leading: gap * _stretch - 8.4pt - 0.3 * size)[#num-box#it.body]
         },
       )
     }
@@ -920,16 +949,17 @@
       return block(above: 14.6pt + _leading - 8.4pt, below: 14.6pt + _leading - 8.4pt,
         width: 100%, breakable: false, {
         set par(leading: _single-leading, first-line-indent: 0pt, justify: false, spacing: _single-leading)
-        set block(spacing: _single-leading)
+        set block(spacing: 0pt)
         set align(left)
+        // float.sty "ruled": distances measured from the v2.4 example
         line(length: 100%, stroke: 0.8pt)
-        v(2pt)
-        block(spacing: 0pt, it.caption)
-        v(2pt)
+        v(2.7pt)
+        block(it.caption)
+        v(0.66pt)
         line(length: 100%, stroke: 0.4pt)
-        v(2pt)
-        block(spacing: 0pt, it.body)
-        v(2pt)
+        v(3pt)
+        block(it.body)
+        v(5.4pt)
         line(length: 100%, stroke: 0.4pt)
       })
     }
@@ -943,17 +973,22 @@
     let float = it.kind in (image, table, raw, "algorithm")
     // (not tables: a longtable must stay breakable)
     if it.kind in (image, raw) {
-      context {
-        let top = 25mm + _topskip-shift
-        if it.location().position().y < top + 0.5pt {
-          if it.kind == raw {
-            block(above: 0pt, below: 26.9pt, width: 100%, pad(top: 4.85pt, it))
-          } else { move(dy: -_topskip-shift, it) }
-        } else { it }
-      }
+      // The spacing lives on this outer block (outside the context), so it
+      // collapses with neighbouring spacing as the figure's own would.
+      block(above: if it.kind == raw { 3.8pt } else { 14.8pt }, below: 26.9pt, width: 100%,
+        breakable: false, context {
+          show figure: set block(above: 0pt, below: 0pt)
+          let top = 25mm + _topskip-shift
+          if it.location().position().y < top + 0.5pt {
+            // a float at the top of a page: listings \medskip below the text
+            // top, images at the text top (the body starts _topskip-shift lower)
+            pad(top: if it.kind == raw { 4.85pt } else { -_topskip-shift }, it)
+          } else { it }
+        })
     } else { it }
     if float [#metadata(repr(it.kind))<elte-float-end>]
   }
+
   show figure.caption: it => context {
     let n = if it.numbering == none { none } else { it.counter.display(it.numbering) }
     let fig-kind = it.kind
@@ -1089,6 +1124,9 @@
     // biblatex's punctuation tracker: no "." after a title that already
     // ends in . ? or ! inside the quotes
     show regex("[.?!][”\"]\."): it => it.text.slice(0, -1)
+    // thesis type strings (hayagriva's English genre -> biblatex bibstrings)
+    show "Doctoral dissertation": if lang == "hu" [Disszertáció] else [PhD thesis]
+    show "Master's thesis": if lang == "hu" [Diplomaterv] else [MA thesis]
     it
   }
 
