@@ -43,7 +43,7 @@
 
 // Main content
 #include "chapters/benchmarks.typ"
-// Not included in the LaTeX build (my_thesis.tex inputs only benchmarks.tex);
+// Not included in the LaTeX build (of the author's chapters, my_thesis.tex input only benchmarks.tex);
 // whether to include it is the author's decision.
 // #include "chapters/mvs_methods.typ"
 
