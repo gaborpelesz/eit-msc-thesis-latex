@@ -1,18 +1,22 @@
-# Result tables and figures are generated per campaign, by
+# Result tables are generated per campaign, by
 # `uv run python -m report render <campaign dir>` (run in the superproject's
 # `benchmark/`), from a result store that lives outside this repository
 # (`/data/bench/results/<campaign>/`). They are ignored by default so that a
 # dev, smoke or pilot campaign cannot drift into the manuscript tree unnoticed.
-# Each table comes three ways -- `.tex`, and for Typst a `.typ` that loads its
-# `.table.json` -- and all three are covered by `results-*`.
 #
-# When a campaign is the one the thesis quotes, commit its tables deliberately,
-# from the root of this repository:
-#     git add -f generated/results-<campaign>-*.tex
+# Each table is written three ways: `results-<campaign>-<table>.typ`, which
+# the thesis includes, the `.table.json` it loads, and a `.tex` kept only
+# until the LaTeX build is retired. `report render` also writes pgfplots
+# sources under `figures/`; Typst cannot use them, and the figures have no
+# Typst form yet (that route is the author's decision).
+#
+# When a campaign is the one the thesis quotes, commit its Typst tables
+# deliberately, from the root of this repository:
 #     git add -f generated/results-<campaign>-*.typ generated/results-<campaign>-*.table.json
-#     git add -f generated/figures/results-<campaign>-*.tex
+# Do not commit the `.tex` tables or `figures/`: the Typst thesis reads
+# neither.
 #
-# `deviations.*` and `methods-provenance.*` (`.tex`, `.typ`, `.table.json`) are
+# `deviations.*` and `methods-provenance.*` (`.typ`, `.table.json`, `.tex`) are
 # NOT ignored: `uv run deviations render` generates them from the manifest and
 # the forks, which are in the superproject, so they are reproducible by anyone
 # who clones it.
