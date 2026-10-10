@@ -1,0 +1,23 @@
+name: Review notes
+description: Comments on a built version of the thesis
+labels: [review]
+body:
+  - type: input
+    id: revision
+    attributes:
+      label: Revision
+      description: Printed in the bottom-right margin of every page (e.g. `a6dfeaa` or `draft-ch3`).
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Page / section
+      placeholder: "p. 14, Section 3.2"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: One issue per topic is easiest to track, but a list is fine too.
+    validations:
+      required: true

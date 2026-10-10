@@ -2,6 +2,11 @@
 TYPST ?= typst
 # Latin Modern fonts shipped with the template (GUST Font License)
 TYPSTFLAGS = --font-path template/fonts
+# Build stamp in the bottom margin (hidden with `final: true`); CI overrides it.
+REV ?= $(shell git describe --always --dirty 2>/dev/null)
+ifneq ($(REV),)
+TYPSTFLAGS += --input rev="rev $(REV)"
+endif
 
 .PHONY: build watch clean
 

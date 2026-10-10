@@ -789,6 +789,7 @@
   twoside: false,    // double sided format (openright)
   draft: false,      // frames instead of images
   final: false,      // hide todo notes
+  revision: none,    // build stamp (e.g. a commit SHA) in the bottom margin; hidden when final
   // front matter produced by this function
   titlepage: true,
   declaration: none, // e.g. include-pdf(read("topicdeclaration.pdf", encoding: none))
@@ -809,6 +810,10 @@
     header-ascent: 25mm + _topskip-shift - 46.44pt,
     footer: _footer(),
     footer-descent: 40pt - 0.7 * 12pt,
+    foreground: if revision != none and not final {
+      place(bottom + right, dx: -10mm, dy: -8mm,
+        text(font: _rm12, size: 8pt, fill: luma(130))[#revision])
+    },
     numbering: none,
   )
   _final.update(final)

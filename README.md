@@ -37,6 +37,21 @@ for text and to DejaVu Sans Mono for code. Mathematics is always set in
 New Computer Modern Math (Typst's bundled Computer Modern math font).
 For direct CLI use, `export TYPST_FONT_PATHS=template/fonts` has the same effect.
 
+### Revision stamp and CI
+
+Every page carries a small revision stamp in the bottom-right margin
+(`git describe --always --dirty`, or `make build REV=...`); it is hidden when
+`final: true` is set in `main.typ`. `.github/workflows/build.yml` builds the PDF
+on every push and pull request:
+
+- push to `main`: the PDF replaces `thesis.pdf` on the rolling **`latest`**
+  pre-release (stable link: `releases/download/latest/thesis.pdf`);
+- tag `draft-*` or `v*` (e.g. `git tag draft-ch3 && git push origin draft-ch3`):
+  a permanent release holding `thesis-<tag>.pdf`, for drafts sent for review;
+- pull request: a workflow artifact only.
+
+Review notes go in issues ("Review notes" template), quoting the stamp.
+
 ### Editor setup (Tinymist)
 
 With the [Tinymist](https://github.com/Myriad-Dreamin/tinymist) language server

@@ -13,6 +13,7 @@
   // twoside: true,   // double sided format
   // draft: true,     // quicker draft compilation without rendering images, this doesn't matter in Typst as it is already fast
   // final: true,     // set final to hide todos
+  revision: sys.inputs.at("rev", default: none), // build stamp, passed by the Makefile and CI
 
   // Document's metadata
   title: [High-Performance Patch-Match \ Multi-View Stereo: Separating Algorithmic Cost from Implementation Overhead],

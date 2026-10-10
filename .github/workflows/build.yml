@@ -1,0 +1,64 @@
+# Builds the thesis PDF.
+#   push to main      -> replaces the PDF on the rolling `latest` pre-release
+#   tag draft-* / v*  -> a permanent release for that tag (a draft sent for review)
+#   pull request      -> workflow artifact only
+name: Build thesis
+on:
+  push:
+    branches: [main]
+    tags: ['draft-*', 'v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create/update releases and move the `latest` tag
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: 0.15.1
+
+      - name: Compile
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            REV="$GITHUB_REF_NAME ($(git rev-parse --short HEAD))"
+          else
+            REV="$(git rev-parse --short HEAD)"
+          fi
+          make build REV="$REV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thesis-${{ github.sha }}
+          path: build/thesis.pdf
+          if-no-files-found: error
+
+      - name: Update rolling `latest` pre-release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git tag -f latest "$GITHUB_SHA"
+          git push -f origin refs/tags/latest
+          NOTES="Built from $GITHUB_SHA on $(date -u +%Y-%m-%d). Overwritten on every push to main; for review notes, quote the revision printed in the bottom margin."
+          if gh release view latest >/dev/null 2>&1; then
+            gh release edit latest --prerelease --notes "$NOTES"
+          else
+            gh release create latest --prerelease --title "Latest build" --notes "$NOTES"
+          fi
+          gh release upload latest build/thesis.pdf --clobber
+
+      - name: Release for tag
+        if: github.ref_type == 'tag'
+        run: |
+          cp build/thesis.pdf "thesis-$GITHUB_REF_NAME.pdf"
+          gh release create "$GITHUB_REF_NAME" "thesis-$GITHUB_REF_NAME.pdf" \
+            --title "$GITHUB_REF_NAME" --notes "Draft built from $GITHUB_SHA." --verify-tag
