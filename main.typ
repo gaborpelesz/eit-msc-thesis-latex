@@ -148,11 +148,6 @@ These algorithms were chosen because of three important reasons. They are all:
 - top-performers on the ETH3D leaderboard and are highly cited by each other,
 - providing access to an open-source implementation on Github.
 
-=== Deviations (open-source forks)
-
-// fork deviations -> I made some forks, I had to patch many of them, so I have to describe what I patched. Generated deviations table into the appendix.
-// separated timings for the common section
-
 
 === Configurations
 
@@ -162,12 +157,34 @@ All of these algorithm provide some level of quality and performance metrics in 
 
 #todo[table with the settings: for each algorithm what does author and what does norm10 mean?]
 
-=== Benchmark and measurement settings
+=== Benchmark metrics
+
+what are we measuring?
+- ETH3D metrics: accuracy, completeness, F1-score
+- External measurements:
+  - ...
+- instrumentation for MVS algorithm phases
+  - which phases?
+    - 
+  - what do these measure?
+    - common `bench_timer.h`
+    - 
+
+
+=== Benchmark settings
+
+- benchmarking hardware details
+- variance measurements
 
 // What are we measuring and why?
 // variance (repeat=2)
 // - hardware binding for the benchmarks, with locking the GPU clock
 
+=== Deviations (open-source forks)
+
+// fork deviations -> I made some forks, I had to patch many of them, so I have to describe what I patched. Generated deviations table into the appendix.
+// separated timings for the common section
+- injected `bench_timer.h` for phase-level measurements
 
 == Runtime decomposition, algorithmic cost, and analysis
 
@@ -180,24 +197,27 @@ focus on production implementation considerations, plus performance consideratio
 = Results & Discussion
 
 
+/*
 showing and analysing benchmarking results. showing selected method and some deep analyses results (e.g., cuda kernels occupancy etc.)
 demonstrate our own implementation that fixes issues
+*/
 
 == Benchmarking
 
-put the full benchmark result tables in the appendix
+// put the full benchmark result tables in the appendix
 
 
 
 
 = Conclusion
 
-
+/*
 should answer the RQs directly, say what the work can't claim and list of future work
 1. To what extent is the performance decline across successive patch-match MVS algorithms attributable to genuine algorithmic complexity versus inherited implementation inefficiency?
 2. Which implementation-level factors (memory access patterns, GPU occupancy, redundant computation, data layout, host-device transfers) contribute most to the performance gap in existing reference implementations?
 3. Can a systematically engineered, production-grade reimplementation of a recent state-of-the-art method recover a substantial fraction of the runtime and memory cost while preserving its benchmark accuracy?
 4. What software engineering and performance optimization practices should the MVS research community adopt to prevent the continued accumulation of avoidable overhead in future methods?
+*/
 
 // Acknowledgements (optional)
 // #heading(numbering: none)[#tr("acknowledgements")]
