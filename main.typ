@@ -136,12 +136,12 @@ the methodology section mainly contains the following in some way:
 == Benchmarking the state-of-the-art
 
 The work starts with a comprehensive benchmarking of the selected methods. We have chosen 12 methods to evaluate in total. The selected methods contain the
-- TSAR-MVS: a different approach than the ACM-family
 - ACM-family (ACMH, ACMP, ACMM, ACMMP): core cited methods successors are building upon
 - APD-MVS, HPM-MVS, and MP-MVS: three major work on top of the ACM-family, choosing different approach to improve the results
-- APDe-MVS, DPE-MVS, DVP-MVS, TSAR-MVS: APD-MVS successors extending the lineage
+- APDe-MVS, DPE-MVS, DVP-MVS: APD-MVS successors extending the lineage
 - HPM-MVS++: HPM-MVS successors
-- CUMVS: a reimplementation of the ACM-family, focusing on performance and production quality
+- TSAR-MVS: a different approach than the ACM-family
+- CUMVS: a reimplementation of the ACM-family #todo("which ACM method exactly?"), focusing on performance and production quality
 
 These algorithms were chosen because of three important reasons. They are all:
 - building on the same concepts of Patch-Match-based stereo reconstruction,
@@ -149,13 +149,43 @@ These algorithms were chosen because of three important reasons. They are all:
 - providing access to an open-source implementation on Github.
 
 
-=== Configurations
+=== Configuration
 
 // author vs norm10, describe what each is, argue why we need both
 
-All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. However, each of them select different parameter settings when evaluating there own algorithms. It is unclear what they are comparing themselves against, when they are evaluating their algorithm to other algorithms. Thus the benchmark will consider two settings: _author_, and _norm10_.
+==== dataset & input resolution
 
-#todo[table with the settings: for each algorithm what does author and what does norm10 mean?]
+All 13 scenes from the ETH3D high-resolution dataset are included in the benchmark. The dataset consists of indoor and outdoor scenes, with 7 scenes having uniform-sized images and 6 scenes includes mixed-sized images. The APD-MVS and DPE-MVS author implementations handle the mixed-sized images in the converter by zero-padding the images to a uniform size.
+
+From an algorithm evaluation perspective, it is interesting to observe the behavior of the implementations at lower resolutions than native to see how they react to them. Generally, production-grade scanning systems produce a stream of images at lower resolutions than they are captured in ETH3D. Otherwise, 3D reconstruction softwares usually provide the ability (either implicitly or explicitly) to rescale the images to a lower resolution to make the MVS step faster. Thus, apart from the native resolution, the benchmark defines two downsampled variants at half (3200px width) and at quarter (1600px width) the resolution of the original images (around 6200px width). The benchmarking system handles the rescaling while preparing the ETH3D dataset, using a JPEG q100 4:4:4 re-encoding with Hamming windows for anti-aliasing.
+
+==== repeats and order
+
+randomized order, with 2 repeats #todo("why two repeats, provide reasoning ")
+
+==== algorithm free-parameters
+
+All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. The thesis aims at a globally consistent setting for shared free-parameters, and aims to incorporate any values from the papers where those values has been explicitly stated by the authors. When selecting a global configuration for a fair benchmarking, the paper stated values has to be cross-verified with their implementations and any deviation from the implementation has to be stated for reproducibility. For the benchmarking, explicitly stated values in the papers will override any deviation in implementation defaults.
+
+#todo[table with the free-parameters and their settings]
+
+- resolution
+- no methods states explicitly in its paper, but the maximum number of source views is set to 20 for all methods. Only a single method #todo("which one") states that they are using max source views to be 10 for their runtime measurements. It is not stated why.
+-
+
+==== measurement hardware
+
+When selecting hardware for the benchmarking, the most important component for MVS evaluations is the GPU. DVP-MVS paper claims that a mainstream GPU has 24GB VRAM. This thesis does not agree with this statement. All methods are built using CUDA kernels so they vendor lock NVidia hardware. The only GPUs that have at least 24GB VRAM are the top consumer GPUs (3090, 4090, 5090) or workstation-grade alternatives. Most companies favor more affordable consumer GPUs for example 5070, or 5080 for production grade company clusters with 12GB-16GB VRAM. Especially for MVS, where for the traditional algorithms more compute can outweigh more VRAM, companies would probably choose two 5070 cards instead of a single 5080 #todo("lot of claims, any sources?"). 
+
+The benchmarking system uses Nvidia 5070 GPU with 12GB VRAM. The benchmark explicitly states out-of-memory crash states. For CPU, the system uses an AMD Ryzen 9 9950X3D 16-Core Processor and a Samsung SSD 990 EVO Plus 4TB for storage. The machine has 192GB DDR5 RAM.
+
+- variance measurements
+
+// What are we measuring and why?
+// variance (repeat=2)
+// - hardware binding for the benchmarks, with locking the GPU clock
+
+
 
 === Benchmark metrics
 
@@ -171,20 +201,12 @@ what are we measuring?
     - 
 
 
-=== Benchmark settings
-
-- benchmarking hardware details
-- variance measurements
-
-// What are we measuring and why?
-// variance (repeat=2)
-// - hardware binding for the benchmarks, with locking the GPU clock
-
 === Deviations (open-source forks)
 
 // fork deviations -> I made some forks, I had to patch many of them, so I have to describe what I patched. Generated deviations table into the appendix.
 // separated timings for the common section
 - injected `bench_timer.h` for phase-level measurements
+- Added synchronization to CUMVS after every kernel call, measured that it only adds \~0.9sec to the whole runtime so it is negligible
 
 == Runtime decomposition, algorithmic cost, and analysis
 
@@ -201,6 +223,15 @@ focus on production implementation considerations, plus performance consideratio
 showing and analysing benchmarking results. showing selected method and some deep analyses results (e.g., cuda kernels occupancy etc.)
 demonstrate our own implementation that fixes issues
 */
+
+3. Can a systematically engineered, production-grade reimplementation of a recent state-of-the-art method recover a substantial fraction of the runtime and memory cost while preserving its benchmark accuracy?
+  - can we find a single change in a lineage shared kernel part (for example in the ACM family) that if we improve, it would improve the perf of all lineage items?
+
+== Preparing for the benchmarking, Findings
+
+1. all nine methods (ACM-family, two HPM, APD, DPE) ship converters that look for `.jpg` images in a case-sensitive manner while ETH3D downloaded images are `*.JPG` with upper-case. Because of this, the converter decodes and re-encodes every image using OpenCV's default JPEG quality, 95. The re-encode changes 46-59% of pixels at 46-50 dB PSNR.
+  - CUMVS reads original images and it doesn't re-encode
+
 
 == Benchmarking
 
