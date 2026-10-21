@@ -64,10 +64,9 @@ These algorithms were chosen because of three important reasons. They are all:
 - top-performers on the ETH3D leaderboard and are highly cited by each other,
 - providing access to an open-source implementation on Github.
 
-
 === Configuration
 
-==== dataset & input resolution
+==== selected dataset and input resolution
 
 There are many influential benchmarks in the field of 3D reconstruction all of them serving a different purpose. The Middlebury dataset @middleburry_dataset has been the foundational work in creating a structured framework for evaulating two-view stereo algorithm. Middleburry is dataset for the initial patch-match work and was published for two-view stereo problems to calculate disparity maps #todo[cite reference]. DTU MVS dataset @dtu_dataset was established for robotics and it provides no leaderboard to find MVS algorithms and their performance. ETH3D @eth3d_dataset is dataset with natural, large-scale scenes, high-resolution images, and provided ground-truth image poses to directly evaluate Multi-View stereo algorithms for pointcloud reconstruction. It has a good leaderboard, showing many SOTA MVS methods. Tanks and Temples @tanks_and_temples_dataset focuses on full 3D pipeline evaluation thus an evaluation requires camera pose estimation as the first step. It also provides a good leaderboard with many SOTA MVS methods.
 
@@ -80,56 +79,89 @@ All 13 scenes from the ETH3D high-resolution dataset are included in the benchma
 
 From an algorithm evaluation perspective, it is interesting to observe the behavior of the implementations at lower resolutions than native to see how they react to them. Generally, production-grade scanning systems produce a stream of images at lower resolutions than they are captured in ETH3D. Otherwise, 3D reconstruction softwares usually provide the ability (either implicitly or explicitly) to rescale the images to a lower resolution to make the MVS step faster. Thus, apart from the native resolution, the benchmark defines two downsampled variants at half (3200px width) and at quarter (1600px width) the resolution of the original images (around 6200px width). The benchmarking system handles the rescaling while preparing the ETH3D dataset, using a JPEG q100 4:4:4 re-encoding with Hamming windows for anti-aliasing.
 
-==== repeats and order
-
-randomized order, with 2 repeats #todo("why two repeats, provide reasoning ")
-- variance measurements
-
 ==== algorithm free-parameters
 
-All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. The thesis aims at a globally consistent setting for shared free-parameters, and aims to incorporate any values from the papers where those values has been explicitly stated by the authors. When selecting a global configuration for a fair benchmarking, the paper stated values has to be cross-verified with their implementations and any deviation from the implementation has to be stated for reproducibility. For the benchmarking, explicitly stated values in the papers will override any deviation in implementation defaults.
+All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. The thesis aims at a globally consistent setting for shared free-parameters, and aims to incorporate any values from the papers where those values has been explicitly stated by the authors. When selecting a global configuration for a fair benchmarking, the paper stated values has to be cross-verified with their implementations and any deviation from the implementation has to be stated for reproducibility. For the benchmarking, explicitly stated values in the papers will override any deviation in implementation defaults. Apart from these, the benchmarking runs the implementation's own shipped converters and parameters.
 
-#todo("table with the free-parameters and their settings")
+No reconstruction method states the number of source images explicitly in its paper. Some define 10 source images for only their memory and runtime comparison for unexplained reasons @apd @tsar @dvp. The implementations all agree on a maximum 20 sources per reference image, with the converters view selection doing the rest. The shipped converter and thus the produced number of views are generally byte-identical because it was copied from implementation to implementation.
 
-- no methods states explicitly in its paper, but the maximum number of source views is set to 20 for all methods. Only a single method #todo("which one") states that they are using max source views to be 10 for their runtime measurements. It is not stated why.
--
-
-==== measurement hardware
-
-When selecting hardware for the benchmarking, the most important component for MVS evaluations is the GPU. DVP-MVS paper claims that a mainstream GPU has 24GB VRAM. This thesis does not agree with this statement. All methods are built using CUDA kernels so they vendor lock NVidia hardware. The only GPUs that have at least 24GB VRAM are the top consumer GPUs (3090, 4090, 5090) or workstation-grade alternatives. Most companies favor more affordable consumer GPUs for example 5070, or 5080 for production grade company clusters with 12GB-16GB VRAM. Especially for MVS, where for the traditional algorithms more compute can outweigh more VRAM, companies would probably choose two 5070 cards instead of a single 5080 #todo("lot of claims, any sources?"). 
-
-The benchmarking system uses Nvidia 5070 GPU with 12GB VRAM. The benchmark explicitly states out-of-memory crash states. For CPU, the system uses an AMD Ryzen 9 9950X3D 16-Core Processor and a Samsung SSD 990 EVO Plus 4TB for storage. The machine has 192GB DDR5 RAM.
-
-For the experiments the 5070 GPU's clock is locked at 2700 MHz.
-
-
-=== Benchmark metrics
+==== metrics
 
 The ETH3D dataset provides a small set of quality metrics for evaluating MVS algorithms. Given an evaluation threshold for the radius around points, the dataset defines two metrics:
 - *Accuracy* defines the ratio of reconstructed points that have a ground truth point within a certain radius over all reconstructed.
 - *Completeness* defines the ratio of ground truth pionts that have a reconstructed point within the same radius over all ground truth points.
 - *F1 Score* is the harmonic mean of accuracy and completeness, combining the two metrics into a single measure.
 
+The quality is measured at 1, 2, 5, 10, 20 cm evaluation thresholds, with 2 cm being the primary for evaluations (the ETH3D default on their leaderboard).
+
+#todo[make table]
+- what the benchmarking system measures for each Run
+  - timings
+    - method wall time (includes 0.1-0.9 second container startup time)
+    - converter time (preprocessing)
+    - phase timings
+      - problem list - parsing the view-selection file into reference problem data structures
+      - scene scan - ?
+      - device init - selecting device, creating CUDA context
+      - scale - ?
+      - upsample - coarser level's depth and normal upsampling to a finer level, either joint-bilateral upsampling or resizing
+      - confidence eval - HPM-MVS++ host-side confidence sweep
+      - edge prior - calculating HPM-MVS++ Canny edge, or DPE-MVS edge segmentation
+      - image pass - one patch match pass for a reference image
+      - input load - host-side reading of the inputs that a single pass needs
+      - device upload - allocating and copying inputs to device memory
+      - prior build - building planar prior for next patch match iteration
+      - patchmatch - one patch match call #todo[what is the difference between this and image pass]
+        - patchmatch.init - hypothesis and cost initialization
+        - patchmatch.propagate - one propagation/refinement iteration
+        - patchmatch.finalize - to depth-map and filters
+        - patchmatch.readback - device->host copy
+      - result_readback - host-side reshaping the results
+      - depthmap_write - host writing depth to disk
+      - fusion - fusing into point cloud
+        - fusion.load - reading images, cameras, maps again for fusion
+        - fusion.consistency - consistency checking and point generation
+      - output_write - final PLY
+  - resources
+    - peak GPU memory
+    - peak host memory
+    - GPU utilisation
+    - GPU power draw
+    - GPU SM clock (to verify that we are not deviating from the locked MHz)
+    - GPU Temperature
+    - disk read/write
+    - disk usage (file sizes after run)
 
 
-// What are we measuring and why?
-what are we measuring?
-- External measurements:
-  - ...
-- instrumentation for MVS algorithm phases
-  - which phases?
-    - 
-  - what do these measure?
-    - common `bench_timer.h`
-    - 
+==== repeats and order
+
+randomized order, with 2 repeats #todo("why two repeats, provide reasoning ")
+- variance measurements
 
 
-=== Deviations (open-source forks)
 
-// fork deviations -> I made some forks, I had to patch many of them, so I have to describe what I patched. Generated deviations table into the appendix.
-// separated timings for the common section
-- injected `bench_timer.h` for phase-level measurements
-- Added synchronization to CUMVS after every kernel call, measured that it only adds \~0.9sec to the whole runtime so it is negligible
+=== Measurement system
+
+A measurement bench is defined by a host system, a GPU and it's driver, and a docker image containing a pinned evaluator and forked methods with pinned commits.
+
+==== environment
+
+- Docker image that builds all algorithm implementations
+- CUDA 12.8 toolkit, clang-18, static OpenCV 4.12, every methods kernel embeds sm_120 machine code
+- All lineage methods keep their `-O3` `--use_fast_math`, and `--maxrregcount=128` compile flags for device code.
+
+===== deviations (open-source forks)
+
+A byte-identical bench timer that times different phases of the algorithms is commited and compiled into every measured fork. It is enabled by an environment variable that the docker image sets. The forks in the ACM lineage already synchronise after every CUDA kernel launch, so no commit was required for measuring kernel timings. CUMVS is asynchronous by default for its initialization kernels, so a commit was required to make these synchronous. The effects are negligible and they only added a measured 0.9 seconds to the wall runtime.
+
+==== hardware
+
+When selecting hardware for the benchmarking, the most important component for MVS evaluations is the GPU. DVP-MVS paper claims that a mainstream GPU has 24GB VRAM. This thesis does not agree with this statement. All methods are built using CUDA kernels so they vendor lock NVidia hardware. The only GPUs that have at least 24GB VRAM are the top consumer GPUs (3090, 4090, 5090) or workstation-grade alternatives. Most companies favor more affordable consumer GPUs for example 5070, or 5080 for production grade company clusters with 12GB-16GB VRAM. Especially for MVS, where for the traditional algorithms more compute can outweigh more VRAM, companies would probably choose two 5070 cards instead of a single 5080 #todo("lot of claims, any sources?"). 
+
+The benchmarking system uses Nvidia 5070 GPU with 12GB VRAM. The benchmark explicitly states out-of-memory crash states. For CPU, the system uses an AMD Ryzen 9 9950X3D 16-Core Processor and a Samsung SSD 990 EVO Plus 4TB for storage. The machine has 192GB DDR5 RAM.
+
+For the experiments the 5070 GPU's clock is locked at 2700 MHz. During  using a single run of probing 3 randomly selected methods (CUMVS, APD-MVS, and DPE-MVS), the unlocked card sustained a clock frequency of 2834-2895 MHz. The selected 2700 MHz is the conservative estimate that the card can sustain during changing temperatures and fluctuating power.
+
 
 == Runtime decomposition, algorithmic cost, and analysis
 
