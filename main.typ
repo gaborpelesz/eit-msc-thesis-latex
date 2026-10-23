@@ -45,17 +45,25 @@
 // #list-of-todos()
 
 // Main content
-// #include "chapters/benchmarks.typ"
-// Not included in the LaTeX build (of the author's chapters, my_thesis.tex input only benchmarks.tex);
-// whether to include it is the author's decision.
-// #include "chapters/mvs_methods.typ"
-
 
 = Introduction
 
 problem formulation, claims, RQs, contributions from thesis itself and how the thesis is structured
 
 (budget 4 pages)
+
+==== RQ1
+To what extent is the performance decline across successive patch-match MVS algorithms attributable to genuine algorithmic complexity versus inherited implementation inefficiency?
+
+==== RQ2
+Which implementation-level factors (memory access patterns, GPU occupancy, redundant computation, data layout, host-device transfers) contribute most to the performance gap in existing reference implementations?
+
+==== RQ3
+Can a systematically engineered, production-grade reimplementation of a recent state-of-the-art method recover a substantial fraction of the runtime and memory cost while preserving its benchmark accuracy?
+
+==== RQ4
+What software engineering and performance optimization practices should the MVS research community adopt to prevent the continued accumulation of avoidable overhead in future methods?
+
 
 = Background
 
@@ -87,38 +95,17 @@ watch out for this not to blow up! we have a lot of methods, and deeply analysin
 
 #include "chapters/methodology.typ"
 
-
-= Results & Discussion
-
 /*
 showing and analysing benchmarking results. showing selected method and some deep analyses results (e.g., cuda kernels occupancy etc.)
 demonstrate our own implementation that fixes issues
 */
-
-3. Can a systematically engineered, production-grade reimplementation of a recent state-of-the-art method recover a substantial fraction of the runtime and memory cost while preserving its benchmark accuracy?
-  - can we find a single change in a lineage shared kernel part (for example in the ACM family) that if we improve, it would improve the perf of all lineage items?
-
-== Preparing for the benchmarking, Findings
-
-1. all nine methods (ACM-family, two HPM, APD, DPE) ship converters that look for `.jpg` images in a case-sensitive manner while ETH3D downloaded images are `*.JPG` with upper-case. Because of this, the converter decodes and re-encodes every image using OpenCV's default JPEG quality, 95. The re-encode changes 46-59% of pixels at 46-50 dB PSNR.
-  - CUMVS reads original images and it doesn't re-encode
-
-
-== Benchmarking
-
-// put the full benchmark result tables in the appendix
-
-
+#include "chapters/results.typ"
 
 
 = Conclusion
 
 /*
 should answer the RQs directly, say what the work can't claim and list of future work
-1. To what extent is the performance decline across successive patch-match MVS algorithms attributable to genuine algorithmic complexity versus inherited implementation inefficiency?
-2. Which implementation-level factors (memory access patterns, GPU occupancy, redundant computation, data layout, host-device transfers) contribute most to the performance gap in existing reference implementations?
-3. Can a systematically engineered, production-grade reimplementation of a recent state-of-the-art method recover a substantial fraction of the runtime and memory cost while preserving its benchmark accuracy?
-4. What software engineering and performance optimization practices should the MVS research community adopt to prevent the continued accumulation of avoidable overhead in future methods?
 */
 
 // Acknowledgements (optional)
