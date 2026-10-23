@@ -65,24 +65,18 @@ These algorithms were chosen because of three important reasons. They are all
 
 === Configuration
 
-==== selected dataset and input resolution
+==== dataset, selected scenes, and input resolution
 
-There are many influential benchmarks in the field of 3D reconstruction all of them serving a different purpose. The Middlebury dataset @middleburry_dataset has been the foundational work in creating a structured framework for evaulating two-view stereo algorithm. Middleburry is dataset for the initial patch-match work and was published for two-view stereo problems to calculate disparity maps #todo[cite reference]. DTU MVS dataset @dtu_dataset was established for robotics and it provides no leaderboard to find MVS algorithms and their performance. ETH3D @eth3d_dataset is dataset with natural, large-scale scenes, high-resolution images, and provided ground-truth image poses to directly evaluate Multi-View stereo algorithms for pointcloud reconstruction. It has a good leaderboard, showing many SOTA MVS methods. Tanks and Temples @tanks_and_temples_dataset focuses on full 3D pipeline evaluation thus an evaluation requires camera pose estimation as the first step. It also provides a good leaderboard with many SOTA MVS methods.
+There are many influential benchmarks in the field of 3D reconstruction all of them serving a different purpose. The Middlebury dataset @middleburry_dataset has been the foundational work in creating a structured framework for evaulating two-view stereo algorithm. DTU MVS dataset @dtu_dataset was established for robotics and it provides no leaderboard to find MVS algorithms and their performance. ETH3D @eth3d_dataset is dataset with natural, large-scale scenes, high-resolution images, and provided ground-truth image poses to directly evaluate Multi-View stereo algorithms for pointcloud reconstruction. It has a good leaderboard, showing many SOTA MVS methods. Tanks and Temples @tanks_and_temples_dataset focuses on full 3D pipeline evaluation thus an evaluation requires camera pose estimation as the first step. It also provides a good leaderboard with many SOTA MVS methods.
 
-ETH3D has been selected as the evaluation dataset for this thesis because
+The ETH3D dataset has been selected as the evaluation dataset for the following reasons
 - it focuses directly on MVS
 - many algorithm choose this dataset as their primary target for benchmarking
 - convenient evaluation scripts are available
 
-All 13 scenes from the ETH3D high-resolution dataset are included in the benchmark. The dataset consists of indoor and outdoor scenes, with 7 scenes having uniform-sized images and 6 scenes includes mixed-sized images. The APD-MVS and DPE-MVS author implementations handle the mixed-sized images in the converter by zero-padding the images to a uniform size.
+The dataset contains 13 scenes with ground-truth as a training set with a wide-variety of indoor and outdoor scenes. The algorithms can react very differently to scene differences thus including all scenes in the benchmarking is crucial. The dataset consists of 7 scenes that have uniform-sized images and 6 scenes which have mixed-sized images. The APD-MVS and DPE-MVS author implementations handle the mixed-sized images in the converter by zero-padding the images to a uniform size.
 
-From an algorithm evaluation perspective, it is interesting to observe the behavior of the implementations at lower resolutions than native to see how they react to them. Generally, production-grade scanning systems produce a stream of images at lower resolutions than they are captured in ETH3D. Otherwise, 3D reconstruction software usually provide the ability (either implicitly or explicitly) to rescale the images to a lower resolution to make the MVS step faster. Thus, apart from the native resolution, the benchmark defines two downsampled variants at half (3200px width) and at quarter (1600px width) the resolution of the original images (around 6200px width). The benchmarking system handles the rescaling while preparing the ETH3D dataset, using a JPEG q100 4:4:4 re-encoding with Hamming windows for anti-aliasing.
-
-==== algorithm free-parameters
-
-All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. The thesis aims at a globally consistent setting for shared free-parameters, and aims to incorporate any values from the papers where those values has been explicitly stated by the authors. When selecting a global configuration for a fair benchmarking, the paper stated values has to be cross-verified with their implementations and any deviation from the implementation has to be stated for reproducibility. For the benchmarking, explicitly stated values in the papers will override any deviation in implementation defaults. Apart from these, the benchmarking runs the implementation's own shipped converters and parameters.
-
-No reconstruction method states the number of source images explicitly in its paper. Some define 10 source images for only their memory and runtime comparison for unexplained reasons @apd @tsar @dvp. The implementations all agree on a maximum 20 sources per reference image, with the converters view selection doing the rest. The shipped converter and thus the produced number of views are generally byte-identical because it was copied from implementation to implementation.
+From an algorithm evaluation perspective, it is interesting to observe the behavior of the implementations at different resolutions than native. Generally, production-grade scanning systems produce a stream of images at lower resolutions than they are captured in ETH3D. Otherwise, 3D reconstruction software usually provide the ability (either implicitly or explicitly) to rescale the images to a lower resolution to make the MVS step faster. Many papers also state that they have run at least part of their evaulations on lower resolutions. Thus, apart from the native resolution, the benchmark defines two downsampled variants at half (3200px width) and at quarter (1600px width) the resolution of the original images (around 6200px width). To minimize loss of image quality, the benchmarking system handles the rescaling using a JPEG q100 4:4:4 re-encoding with Hamming windows for anti-aliasing while preparing the ETH3D dataset.
 
 ==== quality metrics
 
@@ -133,12 +127,26 @@ The quality is measured at 1, 2, 5, 10, 20 cm radius evaluation thresholds, with
     - disk read/write
     - disk usage (file sizes after run)
 
+==== algorithm free-parameters
 
-==== repeats and order
+All of these algorithm provide some level of quality and performance metrics in their papers. The algorithms are building on the same algorithmic blocks with the same or similar parameters to configure. The thesis aims at a globally consistent setting for shared free-parameters, and aims to incorporate any values from the papers where those values has been explicitly stated by the authors. When selecting a global configuration for a fair benchmarking, the paper stated values has to be cross-verified with their implementations and any deviation from the implementation has to be stated for reproducibility. For the benchmarking, explicitly stated values in the papers will override any deviation in implementation defaults. Apart from these, the benchmarking runs the implementation's own shipped converters and parameters.
+
+No reconstruction method states the number of source images explicitly in its paper. Some define 10 source images for only their memory and runtime comparison for unexplained reasons @apd @tsar @dvp. The implementations all agree on a maximum 20 sources per reference image, with the converters view selection doing the rest. The shipped converter and thus the produced number of views are generally byte-identical because it was copied from implementation to implementation.
+
+==== repeats and order of execution
+
+The MVS algorithms are non-deterministic thus the benchmarking requires repeated execution to combat variance in results. To determine the number of necessary repeats during benchmarking prior work has to find the randomness factors, make sure that runs are independent, and estimate the variance @kalibera_rigorous_benchmarking.
+
+In all methods the GPU clock cycle counter seeds the random number generator. No method implementation allows for changing this. The random number generator drives the PatchMatch random initialization, the pixel-level view sampling, the depth refinement and RANSAC iterations, and indirectly everything else downstream such as the selected planar priors.
+
+Even if the work would fix the seed as a deviation from the original implementation, most algorithms would stay non-deterministic due to bugs and considerations for concurrency. The ACM-family PatchMatch kernel implementations have race conditions in the near sampling reads. DPE-MVS has the same type of race in its the edge-aware sampling. Furthermore, it reads past the end of the image buffer. APD-MVS (and DPE-MVS due to copy-pasted code) leaves an uninitialized border row and column on odd image sizes. While HPM-MVS++ has multiple uninitialized values. These are exactly the types of bugs that support the thesis' claim for inherited problems.
+
+The builds and the environment is controlled through
+
+Other randomness factors
 
 randomized order, with 2 repeats #todo("why two repeats, provide reasoning ")
 - variance measurements
-
 
 
 === Measurement system
@@ -155,13 +163,17 @@ A measurement bench is defined by a host system, a GPU and it's driver, and a do
 
 A byte-identical bench timer that times different phases of the algorithms is commited and compiled into every measured fork. It is enabled by an environment variable that the docker image sets. The forks in the ACM lineage already synchronise after every CUDA kernel launch, so no commit was required for measuring kernel timings. CUMVS is asynchronous by default for its initialization kernels, so a commit was required to make these synchronous. The effects are negligible and they only added a measured 0.9 seconds to the wall runtime.
 
+Furthermore, all forks are compiled directly to native  NVidia `sm_120`.
+
 ==== hardware
 
 When selecting hardware for the benchmarking, the most important component for MVS evaluations is the GPU. DVP-MVS paper claims that a mainstream GPU has 24GB VRAM. This thesis does not agree with this statement. All methods are built using CUDA kernels so they vendor lock NVidia hardware. The only GPUs that have at least 24GB VRAM are the top consumer GPUs (3090, 4090, 5090) or workstation-grade alternatives. Most companies favor more affordable consumer GPUs for example 5070, or 5080 for production grade company clusters with 12GB-16GB VRAM. Especially for MVS, where for the traditional algorithms more compute can outweigh more VRAM, companies would probably choose two 5070 cards instead of a single 5080 #todo("lot of claims, any sources?"). 
 
 The benchmarking system uses Nvidia 5070 GPU with 12GB VRAM. The benchmark explicitly states out-of-memory crash states. For CPU, the system uses an AMD Ryzen 9 9950X3D 16-Core Processor and a Samsung SSD 990 EVO Plus 4TB for storage. The machine has 192GB DDR5 RAM.
 
-For controlling the experiments the 5070 GPU's streaming multiprocessor (SM) clock is locked at the card's base frequency: 2317 MHz. The card has a much higher boost frequency which it might not be able to sustained under changing temperatures and fluctuating power over the long benchmarking session and could negatively affect the results.
+For controlling the experiments the 5070 GPU's streaming multiprocessor (SM) clock is locked at the card's base frequency: 2317 MHz. The card has a much higher boost frequency which it might not be able to sustained under changing temperatures and fluctuating power over the long benchmarking session and could negatively affect the results. No other processes running on the GPU is a requirement for the benchmarking.
+
+Controlling the host requires us to pin the containers to use CPU threads 0-7,16-23 because of the 9950X3D dual CCD design having 96 MB L3 cache for these 16 threads, while having only 32 MB for the other 16. A method that is only running on the latter would be in disadvantage compared to the others that run only on the former. Apart from this, the benchmark sets the CPU governor and the Energy Performance Preference (EPP) to performance mode, and turns off boost.
 
 
 == Runtime decomposition, algorithmic cost, and analysis
