@@ -137,9 +137,17 @@ No reconstruction method states the number of source images explicitly in its pa
 
 The MVS algorithms are non-deterministic thus the benchmarking requires repeated execution to combat variance in results. To determine the number of necessary repeats during benchmarking prior work has to find the randomness factors, make sure that runs are independent, and estimate the variance @kalibera_rigorous_benchmarking.
 
+*Randomness factors*: in all methods the GPU clock cycle counter seeds the random number generator. No method implementation allows for changing this. The random number generator drives the PatchMatch random initialization, the pixel-level view sampling, the depth refinement and RANSAC iterations, and indirectly everything else downstream such as the selected planar priors. Even if the work would fix the seed as a deviation from the original implementation, most algorithms would stay non-deterministic due to bugs and inattention to concurrency issues. The ACM-family PatchMatch kernel implementations have race conditions in the near sampling reads. DPE-MVS has the same type of race in its the edge-aware sampling. Furthermore, it reads uninitialized memory past the end of the image buffer. APD-MVS (and DPE-MVS due to copy-pasted code) leaves an uninitialized border row and column on odd image sizes. Meanwhile, HPM-MVS++ has multiple uninitialized values in the kernel. These are the types of bugs that the thesis claims as inherited problems.
+
+*Run independence and variance estimation*: for proving the independence of runs and finding out the variance to calculate the number of repeats, a dimensioning @kalibera_rigorous_benchmarking on three factor configurations has been run 15 times per method. The configurations include two selected datasets both running at 1600px downscaled resolution: `pipes` and `meadow` and `office`.
+
 In all methods the GPU clock cycle counter seeds the random number generator. No method implementation allows for changing this. The random number generator drives the PatchMatch random initialization, the pixel-level view sampling, the depth refinement and RANSAC iterations, and indirectly everything else downstream such as the selected planar priors.
 
 Even if the work would fix the seed as a deviation from the original implementation, most algorithms would stay non-deterministic due to bugs and considerations for concurrency. The ACM-family PatchMatch kernel implementations have race conditions in the near sampling reads. DPE-MVS has the same type of race in its the edge-aware sampling. Furthermore, it reads past the end of the image buffer. APD-MVS (and DPE-MVS due to copy-pasted code) leaves an uninitialized border row and column on odd image sizes. While HPM-MVS++ has multiple uninitialized values. These are exactly the types of bugs that support the thesis' claim for inherited problems.
+
+*Variance estimation*:
+- wall-time noise does not dpeend on the scene
+- F1 noise depends on the scene
 
 The builds and the environment is controlled through
 
@@ -174,6 +182,8 @@ The benchmarking system uses Nvidia 5070 GPU with 12GB VRAM. The benchmark expli
 For controlling the experiments the 5070 GPU's streaming multiprocessor (SM) clock is locked at the card's base frequency: 2317 MHz. The card has a much higher boost frequency which it might not be able to sustained under changing temperatures and fluctuating power over the long benchmarking session and could negatively affect the results. No other processes running on the GPU is a requirement for the benchmarking.
 
 Controlling the host requires us to pin the containers to use CPU threads 0-7,16-23 because of the 9950X3D dual CCD design having 96 MB L3 cache for these 16 threads, while having only 32 MB for the other 16. A method that is only running on the latter would be in disadvantage compared to the others that run only on the former. Apart from this, the benchmark sets the CPU governor and the Energy Performance Preference (EPP) to performance mode, and turns off boost.
+
+#todo[host boost is turned off, explain why.]
 
 
 == Runtime decomposition, algorithmic cost, and analysis
