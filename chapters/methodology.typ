@@ -141,9 +141,10 @@ The MVS algorithms are non-deterministic thus the benchmarking requires repeated
 
 *Run independence and variance estimation*: for proving the independence of runs and finding out the variance to calculate the number of repeats, a dimensioning @kalibera_rigorous_benchmarking on three factor configurations has been run 15 times per method. The configurations include two selected datasets both running at 1600px downscaled resolution: `pipes` and `meadow` and `office`.
 
-In all methods the GPU clock cycle counter seeds the random number generator. No method implementation allows for changing this. The random number generator drives the PatchMatch random initialization, the pixel-level view sampling, the depth refinement and RANSAC iterations, and indirectly everything else downstream such as the selected planar priors.
-
-Even if the work would fix the seed as a deviation from the original implementation, most algorithms would stay non-deterministic due to bugs and considerations for concurrency. The ACM-family PatchMatch kernel implementations have race conditions in the near sampling reads. DPE-MVS has the same type of race in its the edge-aware sampling. Furthermore, it reads past the end of the image buffer. APD-MVS (and DPE-MVS due to copy-pasted code) leaves an uninitialized border row and column on odd image sizes. While HPM-MVS++ has multiple uninitialized values. These are exactly the types of bugs that support the thesis' claim for inherited problems.
+#figure(
+  image("/images/dimensioning_run_statistics.png", width: 100%),
+  caption: [Run statistics of the dimensioning campaign.],
+) <fig-dimensioning-run-statistics>
 
 *Variance estimation*:
 - wall-time noise does not dpeend on the scene
