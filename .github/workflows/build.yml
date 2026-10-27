@@ -28,6 +28,11 @@ jobs:
         with:
           typst-version: 0.15.1
 
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: generated/**/scripts/*.py
+
       - name: Compile
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then

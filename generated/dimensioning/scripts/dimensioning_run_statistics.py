@@ -1,7 +1,11 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["matplotlib==3.10.*", "numpy==2.*", "scipy==1.*"]
+# ///
 """Test-statistics figure: lag-1 autocorrelation and drift per cell, for wall time and F1 at 2 cm.
 
-Reads ../data/runs.csv; writes ../figures/dimensioning_run_statistics.png.
-Run: uv run --with matplotlib --with scipy --with numpy python scripts/dimensioning_run_statistics.py
+Reads ../data/runs.csv; writes ../../figures/dimensioning_run_statistics.png.
+Run: `make figures` from the thesis root, or `uv run scripts/dimensioning_run_statistics.py`.
 """
 import csv
 import math

@@ -8,9 +8,17 @@ ifneq ($(REV),)
 TYPSTFLAGS += --input rev="rev $(REV)"
 endif
 
-.PHONY: build watch clean
+# Figures rendered from checked-in data by checked-in scripts (needs uv).
+FIGURES = generated/figures/dimensioning_run_statistics.png
 
-build:
+.PHONY: build watch clean figures
+
+figures: $(FIGURES)
+
+generated/figures/dimensioning_run_statistics.png: generated/dimensioning/scripts/dimensioning_run_statistics.py generated/dimensioning/data/runs.csv
+	uv run $<
+
+build: figures
 	mkdir -p build
 	$(TYPST) compile $(TYPSTFLAGS) main.typ build/thesis.pdf
 

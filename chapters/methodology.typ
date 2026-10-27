@@ -142,7 +142,7 @@ The MVS algorithms are non-deterministic thus the benchmarking requires repeated
 *Run independence and variance estimation*: for proving the independence of runs and finding out the variance to calculate the number of repeats, a dimensioning @kalibera_rigorous_benchmarking on three factor configurations has been run 15 times per method. The configurations include two selected datasets both running at 1600px downscaled resolution: `pipes` and `meadow` and `office`.
 
 #figure(
-  image("/thesis/generated/figures/dimensioning_run_statistics.png", width: 100%),
+  image("/generated/figures/dimensioning_run_statistics.png", width: 100%),
   caption: [Run statistics of the dimensioning campaign.],
 ) <fig-dimensioning-run-statistics>
 
