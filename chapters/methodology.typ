@@ -146,6 +146,8 @@ The MVS algorithms are non-deterministic thus the benchmarking requires repeated
   caption: [Run statistics of the dimensioning campaign.],
 ) <fig-dimensioning-run-statistics>
 
+#todo[we still need to select the number of reruns]
+
 *Variance estimation*:
 - wall-time noise does not dpeend on the scene
 - F1 noise depends on the scene
@@ -192,6 +194,10 @@ Controlling the host requires us to pin the containers to use CPU threads 0-7,16
 
 
 == Own implementation...
+
+Itt van az algoritmus leirasa es kidolgozasa
+
+claude: mik azok amik érdekesek lehetnek más szemszögéből, mik azok az angle-ök
 
 /*
 instead of Quorum MVS, do an ablation study based on the selected algorithm (for example APD-MVS or MP-MVS). Change only a single component at a time, for example remove the JPEG re-encoding and measure how it affects the system, and move component by component to show how we are slowly improving the system. Move in small iterations and do the same when making the system into a production system. Make sure we stay bit-identical for performance improvements, and make sure we measure as ablation when we are deviating from the original implementation.
