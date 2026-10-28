@@ -48,6 +48,11 @@
 
 = Introduction
 
+
+
+
+----------------------------------------
+
 problem formulation, claims, RQs, contributions from thesis itself and how the thesis is structured
 
 (budget 4 pages)
@@ -69,11 +74,24 @@ What software engineering and performance optimization practices should the MVS 
 
 // | Background (MVS, PatchMatch, GPU model, ETH3D metrics) | 7 |
 
+/*
 short 3D reconstruction and Dense MVS intro, contains the formulation of patch match algorithm and focuses on early patch match implementaion. Also intros the general structure of MVS programs and ETH3D as a benchmarking target.
 
 make sure we include enough GPU and performance optimization background to cover methodology and results sections. Especially considering the deep analysis.
 
 (budget 7 pages)
+*/
+
+The goal of 3D reconstruction is to recover consistent 3D structural information of a scene or a 3D model of specific objects, from multiple 2D sources like images, depth maps, active sensing approaches like structured light, time-of-flight sensors, or directly from range measurements (LiDAR).
+
+Photogrammetry defines the approach to recover 3D information and measurements purely from imagery. To obtain a 3D representation from a multiple images from a set of uncalibrated imaging devices, a traditional photogrammetry-based 3D reconstruction pipeline consists of two major steps:
+- Pose estimation: finding the instrinsic and extrinsic (relative position and orientation) calibration of the imaging devices from a set of images. @hartley_zisserman_mvg
+- Dense reconstruction: creating a dense representation of the scene, such as point clouds, mesh models, and volumetric representations (voxel grids).
+
+
+--- notes:
+- Multi-view Stereo (MVS) problem formulation, approaches, depth map estimation, point cloud fusion
+- the Patch-Match algorithm description, sweeping, acceleration with checkerboard pattern
 
 
 = Literature review
