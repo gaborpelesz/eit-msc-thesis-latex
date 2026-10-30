@@ -69,6 +69,12 @@ needs evidence in literature review but this is a strong point
 ETH3D collects runtime (“mandatory information for each submission”) but ranks by F1 alone. Runtimes are self-reported without hardware. About 170 of 630 rows show ≥ 999 999 s placeholders. ACMMP, APD-MVS, APDe-MVS, HPM-MVS, HPM-MVS++, MP-MVS and DPE-MVS all list 10⁷ s. The counts are approximate, from a snapshot taken 30 Oct 2026; archive it.
 Efficiency is requested but not scored.
 Gipuma said the same of KITTI and Middlebury in 2015. Middlebury v3 and KITTI show size-normalised runtimes but still rank by error.
+
+(i) Archiving and citing the leaderboard
+- Public archive: submit both the default view and the runtime view (?metric=time) to the Wayback Machine and archive.today. Then open each snapshot and check the numbers actually appear, because the table may be filled in by JavaScript and come out empty.
+- Private copy: save the page as HTML and as a full-page PDF, record a SHA-256 hash of each, and keep them in the vault, not the superproject that's going public.
+- The count: "~170 of 630 rows" is an agent's approximate count. Under your rule that manuscript numbers come from scripts, add a small parser that reads the archived HTML and outputs the counts and the lineage methods' runtimes. The ledger claim then cites that query.
+- Citation: cite the ETH3D paper for what the benchmark intends, and add a @misc entry for the leaderboard with url, urldate = 2026-10-30 and the archive URL in note. The follow-up file has the BibTeX. In the text, put the date on the observation: "As of 30 October 2026, the ETH3D leaderboard lists 10⁷ s for ...".
 */
 - The benchmarks doesn't measure and score algorithmic or implementation efficiency, ACM-family was built on Gipuma, then the contenders started to tweaking the original ACM algorithms further and further with introducing more and more constraints into the algorithm such as multiple-scales (adding more iterations), geometric consistency (adding another geometric consistency propagation after the photometric consistency), planar priors (stricter loss function), confidence sweeps (new postprocessing), DL priors (additional deep learning pre-processing), leading to higher quality in the benchmarks but also making them infeasible in production-grade large-scale photogrammetry problems due to increased runtime. Today's top 10 ETH3D are all PatchMatch hybrids led by DVP-MVS++ at 90.23 2cm f1 score.
 
@@ -78,16 +84,18 @@ Gipuma said the same of KITTI and Middlebury in 2015. Middlebury v3 and KITTI sh
 /* BACKGROUND */
 /* ---------- */
 
-- early 3D reconstruction algorithms were inefficient because they were using large cost-volumes to store costs for the optimization problem. Voxel-based 3D reconstructions discretise the scene into a voxel grid. Their accuracy is bounded by voxel grid's resolution. Large-scale high resolution reconstruction is infeasible due to the cubic memory growth of the grid #todo[cite steven1999_voxel_coloring.pdf]. Also MVS problems require going through all pixels in all images and matching that with other pixels in other images which is a really compute-intensive task. with the huge leaps in GPU technology in the last decade there has been a great demand for highly parallel MVS algorithms that can map to GPUs efficiently. But GPUs generally have limitations on the amount of memory that they can utilize thus limiting the scale of the 3D reconstruction problem.
+- early 3D reconstruction algorithms were inefficient because they were using large cost-volumes to store costs for the optimization problem. Voxel-based 3D reconstructions discretise the scene into a voxel grid. Their accuracy is bounded by voxel grid's resolution. Large-scale high resolution reconstruction is infeasible due to the cubic memory growth in the grid resolution #todo[cite steven1999_voxel_coloring.pdf]. Also MVS problems require going through all pixels in all images and matching that with other pixels in other images which is a really compute-intensive task. with the huge leaps in GPU technology in the last decade there has been a great demand for highly parallel MVS algorithms that can map to GPUs efficiently. But GPUs generally have limitations on the amount of memory that they can utilize thus limiting the scale of the 3D reconstruction problem.
 - patch match history:
   - PatchMatch algorithm for interactive editing: Barnes et al. 2009
   - Bleyer 2011 slanted planes for stereo, strictly sequential, authors call a GPU port an obvious idea but they didn't do it
-  - bailer 2012: row column restriction to paralellize
-  - shen 2013: ?
+  - bailer 2012: row column paralellize (useful info: their depth-map filtering step is dominated by I/O which a production ready implementation can easily resolve by background i/o threads)
+  - shen 2013: same seemingly independent paper moving patchmatch from two-views into multi-view. In a sentence, we can state that "Bailer2012 and Shen2013 carried PatchMatch from two-view stereo to multi-view stereo"
   - zhen 2014: single-neighbor alternating sweeps on GPU then they implemented a parallel version of this algorithm that could paralellize across 1 axis of images at the time, doing sweeps.
   - COLMAP uses Zheng sweeps
   - Gipuma 2015: 50s -> 2.7s, a paper with great focus on PatchMatch efficiency, introduced the checkerboard propagation which created a highly efficient MVS algorithm. They also have a fast mode that uses algorithmic approximation
 
+//  Kriegel et al. 2017:
+// - It's in Knowledge and Information Systems 52:341–378 and labelled as a survey paper. Its key line: runtimes of one algorithm "can differ by several orders of magnitude due to implementation differences, without actual algorithmic differences". It also argues for exactly your design: compare implementations in the same framework, at the same level of optimisation. Their field is clustering and outlier detection, so cite it as the general precedent, with your thesis as the MVS case.
 
 ----------------------------------------
 
@@ -170,6 +178,38 @@ watch out for this not to blow up! we have a lot of methods, and deeply analysin
   - HPM-MVS
   - (maybe MP-MVS or DPE-MVS)
 
+prior mvs efficiency work:
+- Bailer/Zheng parallel sweeps
+- Gipuma Checkerboard propagation
+- OpenMVS ACMH
+- SURE
+- CUMVS
+
+prior algorithmic cost cutting work as optimization
+- SURE (Stuttgart dense matching software built on SGM): an example from photogrammetry where efficiency engineering is what made dense matching practical
+  - SURE: Photogrammetric Surface Reconstruction from Imagery", LC3D Workshop, Berlin, 2012
+    - 21.1GB -> 1.3GB memory usage through optimization work
+  - "SURE - The ifp Software for Dense Image Matching", Photogrammetric Week '13, 2013.
+    - 36 (135 megapixels) aerial images in 4h 37min 
+
+prior algorithmic vs implementation work:
+- Leiserson 2020 (focusing on software optimizations and engineering of research). Python matrix multiply 25 552 s → 0.41 s, 62 806x from engineering alone.
+
+prior benchmarking culture:
+- "The Efficiency Misnomer" and "Green AI" show a similar trend in AI happening right now -> benchmarks and leaderboards competing only on quality disregarding cost and efficiency
+- Ethayarajh & Jurafsky, "Utility is in the Eye of the User" (EMNLP 2020) saying that highly inefficient models provide less utility to practitioners but not to a leaderboard, since it is a cost that only the former must bear. Also "To allow practitioners to better estimate a model's utility to them, we advocate for more transparency on leaderboards, such as the reporting of statistics that are of practical concern (e.g., model size, energy efficiency, and inference latency)."
+- Gipuma's 2015 complaint
+  - "Nevertheless, guided by the quality metrics used in standard benchmarks such as KITTI and Middlebury, most authors concentrate on accuracy and pay limited attention to scalability and runtime performance. Many existing algorithms become impractical when moving to larger sets of high-resolution images."
+  - This is a strong support saying that this is also what is happening in ETH3D with PatchMatch-based MVS, and efficiency and cost is not incentivized. Making these methods stand out in leaderboards but fail in real-world adaptability.
+    - Should introduce KITTI and Middlebury as two-view stereo benchmark before ETH3D
+    - Also Gipuma authors are included in ETH3D authors and they said that their 24MP images would encourage efficient methods, yet they rank only by F1 and stating the runtime is not crucial in submitting to them!
+    The ETH3D paper says more about efficiency than we had. It has four passages:
+      1. p. 1: the 24 MP images "encourage the development of memory and computationally efficient methods which can handle very large datasets."
+      2. p. 1: the video scenario "rewards efficient algorithms which can handle large amounts of data."
+      3. p. 7: the methods "take in the order of several minutes to an hour" on the video sequences, "underlining the need for more efficient algorithms".
+      4. p. 8, Conclusion: "One of these challenges is efficient processing of large amounts of data ... These challenges are far from being solved and there is significant room for improvement."
+    > In 2015, Gipuma's authors observed that benchmark metrics led authors to neglect runtime [p. 1]. Two of them co-authored ETH3D, whose paper names efficient processing of large data as an open challenge [p. 8], and the benchmark requests a runtime with every submission. It ranks by F1 alone, however, and as of 30 October 2026 the lineage's leading entries report placeholder runtimes. The challenge was posed but never scored.
+    
 
 #include "chapters/methodology.typ"
 
