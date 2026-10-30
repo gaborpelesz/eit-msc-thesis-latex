@@ -50,6 +50,17 @@
 
 
 
+- photogrammetry, image-based 3d reconstruction, is very popular and hot topic
+  - 3D reconstruction and perception is a foundational problem in computer vision driving multiple industries and problem spaces such as robotics, manufacturing, healthcare, automotive, logistics and warehousing, agriculture, and more recently construction, surveying, and geomatics. In the recent years, photogrammetry (image-based 3D reconstruction and measurements) has been gaining interest. Regular colored images contain vast amount of information, are very accessible and cheap, easy to understand by humans.
+- Multi-View Stereo (MVS) produces highly accurate and dense point clouds
+- the problem of MVS is the amount of data it has to process
+- this is a problem in highly accurate and/or large-scale 3D reconstruction (with faster algorithms, 3D models could become higher quality because the reconstruction could use higher resolution images or more sophisticated algorithms to improve point accuracy)
+- early 3D reconstruction algorithms were inefficient because they were using large cost-volumes to store costs for the optimization problem. Grid-based (Voxel-based) 3D reconstruction can work in large-scale but it produces low quality results. Also MVS problems require going through all pixels in all images and matching that with other pixels in other images which is a really compute-intensive task. with the huge leaps in GPU technology in the last decade there has been a great demand for highly parallel MVS algorithms that can map to GPUs efficiently. But GPUs generally have limitations on the amount of memory that they can utilize thus limiting the scale of the 3D reconstruction problem.
+- in year X, Y introduced the PatchMatch algorithm, then they implemented a parallel version of this algorithm that could paralellize across 1 axis of images at the time, doing sweeps.
+- Then Gipuma, a paper with great focus on PatchMatch efficiency, introduced the checkerboard propagation which created a highly efficient MVS algorithm.
+- Another important event was that they introduced ETH3D dataset which created an easy way to measure algorithmic performance and with it, and with this dataset, dozens of algorithms were released with papers competing with each other on the benchmarks.
+- The benchmarks doesn't measure and score algorithmic or implementation efficiency so the contenders started to tweak the original Gipuma algorithm further and further with introducing more and more constraints into the algorithm, leading to higher quality in the benchmarks but also making them infeasible in production-grade large-scale photogrammetry problems.
+- The thesis claims that many of the algorithms slowness comes from implementation inefficiency inherited from the lineage of the developing algorithm family.
 
 ----------------------------------------
 
@@ -82,11 +93,16 @@ make sure we include enough GPU and performance optimization background to cover
 (budget 7 pages)
 */
 
-The goal of 3D reconstruction is to recover consistent 3D structural information of a scene or a 3D model of specific objects, from multiple 2D sources like images, depth maps, active sensing approaches like structured light, time-of-flight sensors, or directly from range measurements (LiDAR).
+The goal of 3D reconstruction is to recover consistent 3D structural information of a scene or a 3D model of specific objects, from multiple 2D sources such as images, depth maps, and active sensing approaches such as structured light, time-of-flight sensors, or directly from range measurements (LiDAR).
 
-Photogrammetry defines the approach to recover 3D information and measurements purely from imagery. To obtain a 3D representation from a multiple images from a set of uncalibrated imaging devices, a traditional photogrammetry-based 3D reconstruction pipeline consists of two major steps:
+Photogrammetry defines the approach to recover 3D information and measurements mainly from imagery. A traditional photogrammetry-based 3D reconstruction pipeline obtains a 3D representation from multiple images captured by a set of uncalibrated imaging devices and consists of two major steps:
 - Pose estimation: finding the instrinsic and extrinsic (relative position and orientation) calibration of the imaging devices from a set of images. @hartley_zisserman_mvg
 - Dense reconstruction: creating a dense representation of the scene, such as point clouds, mesh models, and volumetric representations (voxel grids).
+
+In this work we are focusing on _Multi-View Stereo_ (MVS) dense reconstruction. Given a set of calibrated cameras and images observing the same scene from different view points, use stereopsis to find 3D depth information for image pixels.
+
+
+
 
 
 --- notes:
