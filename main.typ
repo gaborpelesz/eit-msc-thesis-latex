@@ -129,23 +129,24 @@ make sure we include enough GPU and performance optimization background to cover
 (budget 7 pages)
 */
 
-The goal of 3D reconstruction is to recover consistent 3D structural information of a scene or a 3D model of specific objects, from multiple 2D sources such as images, depth maps, and active sensing approaches such as structured light, time-of-flight sensors, or directly from range measurements (LiDAR).
+The goal of 3D reconstruction is to recover a representation of the 3D shape of objects or scenes. Active sensing approaches such as structured light, time-of-flight sensors, or LiDAR can directly give range measurements for immediate surface information. This thesis concentrates on the passive approach where 3D is derived from images captured by ordinary cameras.
 
-Photogrammetry defines the approach to recover 3D information and measurements mainly from imagery. A traditional photogrammetry-based 3D reconstruction pipeline obtains a 3D representation from multiple images captured by a set of uncalibrated imaging devices and consists of two major steps:
-- Pose estimation: finding the instrinsic and extrinsic (relative position and orientation) calibration of the imaging devices from a set of images. @hartley_zisserman_mvg
-- Dense reconstruction: creating a dense representation of the scene, such as point clouds, mesh models, and volumetric representations (voxel grids).
+An image-based stereo reconstruction relies on the parallax effect between images from different viewpoints. Given the camera's internal parameters (intrinsic parameters) and its position and orientation (extrinsic parameters) for the viewpoints, a 3D point can be recovered if its 2D projection (a pixel) is known in at least two viewpoints. Structure from Motion (SfM) is one of the fundamental problems in image-based 3D reconstruction. Its goal is to define an optimization problem to find out the camera's intrinsic calibration matrix and to find the camera extrinsics where the images were taken from. SfM methods work by finding many reliable distinct features across images, matching the corresponding features across images, constructing 2D tracks from the matches, solving for the SfM model from the 2D tracks, and finally, refining the model using bundle adjustment #[cite FH15]. Given an initial state for the camera parameters, the optimization can iteratively project the 3D point candidates (calculated from the point correspondences) onto the images, and calculate the error between the point's projected and observed pixel location (reprojection error) @hartley_zisserman_mvg. Nowadays, a widely used open-source tool for SfM and a general 3D reconstruction pipeline is COLMAP @colmap_sfm. A reliable and accurate SfM reconstruction is key for obtaining an accurate dense 3D representation, often requiring sub-pixel level reprojection errors @furukawa2015_mvs_tutorial. SfM pipelines also produce a set of reliable 3D points that is key in dense reconstruction initialization.
 
-In this work we are focusing on _Multi-View Stereo_ (MVS) dense reconstruction. Given a set of calibrated cameras and images observing the same scene from different view points, use stereopsis to find 3D depth information for image pixels.
+In order to obtain a dense representation of the 3D scene an algorithm has to search for all pixel correspondences between views. Given known camera intrinsics and extrinsics, two-views are enough for reconstruction @scharstein2002_taxonomy @tosi2025_deep_stereo_survey. In a two- or multiple-view stereo setup dense stereo correspondences are found with the help of epipolar geometry @hartley_zisserman_mvg. The image of a point on one image is constrained to lie on a line (the epipolar line) on another image which significantly reduces the search space. Thus the stereo correspondence problem is defined as: for each pixel $p_i$ in a reference image $I_r$, find its correspondence on the epipolar line in another image $I_j$.
+
+_Multi-View Stereo_ (MVS) is the extension to more than two images and the focus of this thesis. The input of MVS algorithms is a set of images and their corresponding camera parameters. Using multiple images has many advantages such as
+- several baselines reduce the matching ambiguity leading to more precise reconstruction @okutomi1993_multibaseline
+- a point occluded in one view can potentially be matched in others @furukawa2015_mvs_tutorial
+- frontal views of surfaces often lead to better results. #todo[no citation here, maybe replace, or cite]
+
+There are multiple ways to represent a 3D scene. The result of solving the correspondence problem in MVS methods can be depth maps, point clouds, volumes or meshes. Generally, the quality of an MVS reconstruction highly depends on the quality of its inputs: the images and the camera parameters.
 
 
 /*
 4. A cost model
 Per reference image, cost is pixels × source views × patch taps × iterations × passes. The Literature Review can then place each lineage step as “multiplies term X”, using compendium §2.2’s numbers. That turns a list of papers into an argument.
 */
-
---- notes:
-- Multi-view Stereo (MVS) problem formulation, approaches, depth map estimation, point cloud fusion
-- the Patch-Match algorithm description, sweeping, acceleration with checkerboard pattern
 
 == GPU background
 
